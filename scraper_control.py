@@ -105,9 +105,11 @@ class ScrapeManager:
         self.settings = self.load_settings()
 
     def load_settings(self):
+        """Saved search settings, or None when there are none or the file is damaged."""
         try:
-            return json.loads(self.settings_path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
+            saved = json.loads(self.settings_path.read_text(encoding="utf-8-sig"))
+            return {**clean_settings(saved), "wanted": bool(saved.get("wanted"))}
+        except (OSError, ValueError, TypeError, AttributeError):
             return None
 
     def save_settings(self):
