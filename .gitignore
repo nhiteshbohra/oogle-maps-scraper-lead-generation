@@ -1,0 +1,15 @@
+# Leads and the user's work: scraped phone numbers must never be committed
+data/
+archive/
+*.csv
+
+# Build output
+*.exe
+bin/
+cache/
+vendor
+coverage.out
+
+# Python
+__pycache__/
+*.py[cod]
