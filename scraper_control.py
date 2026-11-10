@@ -32,12 +32,75 @@ MAX_BBOX_DEGREES = 0.5
 KEEP_AWAKE = 0x80000001
 ALLOW_SLEEP = 0x80000000
 
+# Windows job-object constants (winnt.h), used by ChildGuard.
+JOB_EXTENDED_LIMIT_INFO = 9
+JOB_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+PROCESS_TERMINATE = 0x0001
+PROCESS_SET_QUOTA = 0x0100
+IO_COUNTER_FIELDS = 6
+
 CELLS_RE = re.compile(r"grid scraping: ~(\d+) cells")
 
 
 def set_keep_awake(flags):
     if os.name == "nt":
         ctypes.windll.kernel32.SetThreadExecutionState(flags)
+
+
+class ChildGuard:
+    """Makes Windows end the scraper whenever this app ends, however it ends.
+
+    Closing the app window kills Python without running any cleanup code, which
+    used to leave the scraper running alone and a second one starting on the next
+    launch. Processes placed in a "kill on close" job object die with their owner.
+    """
+
+    def __init__(self):
+        self.job = None
+        if os.name != "nt":
+            return
+
+        from ctypes import wintypes
+
+        class BasicLimits(ctypes.Structure):
+            _fields_ = [
+                ("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                ("LimitFlags", wintypes.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
+                ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD),
+                ("SchedulingClass", wintypes.DWORD),
+            ]
+
+        class ExtendedLimits(ctypes.Structure):
+            _fields_ = [
+                ("BasicLimitInformation", BasicLimits), ("IoInfo", ctypes.c_uint64 * IO_COUNTER_FIELDS),
+                ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t),
+            ]
+
+        self.kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self.kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+        self.kernel32.CreateJobObjectW.argtypes = (ctypes.c_void_p, wintypes.LPCWSTR)
+        self.kernel32.SetInformationJobObject.argtypes = (wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD)
+        self.kernel32.OpenProcess.restype = wintypes.HANDLE
+        self.kernel32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+        self.kernel32.AssignProcessToJobObject.argtypes = (wintypes.HANDLE, wintypes.HANDLE)
+        self.kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+
+        job = self.kernel32.CreateJobObjectW(None, None)
+        limits = ExtendedLimits()
+        limits.BasicLimitInformation.LimitFlags = JOB_LIMIT_KILL_ON_JOB_CLOSE
+        if job and self.kernel32.SetInformationJobObject(job, JOB_EXTENDED_LIMIT_INFO, ctypes.byref(limits), ctypes.sizeof(limits)):
+            self.job = job
+
+    def protect(self, proc):
+        """Tie a started process (and the browsers it starts) to this app's lifetime."""
+        if not self.job:
+            return
+        handle = self.kernel32.OpenProcess(PROCESS_SET_QUOTA | PROCESS_TERMINATE, False, proc.pid)
+        if handle:
+            self.kernel32.AssignProcessToJobObject(self.job, handle)
+            self.kernel32.CloseHandle(handle)
 
 
 def clean_settings(raw):
@@ -95,6 +158,7 @@ class ScrapeManager:
 
         self.lock = threading.Lock()
         self.stop_event = threading.Event()
+        self.guard = ChildGuard()
         self.thread = None
         self.proc = None
         self.state = "idle"  # idle | running | waiting | complete | blocked | error
@@ -207,7 +271,6 @@ class ScrapeManager:
 
     def environment(self):
         env = dict(os.environ)
-        env["DISABLE_TELEMETRY"] = "1"
         # The scraper's browser driver needs Node.js; use the installed one unless told otherwise.
         if not env.get("PLAYWRIGHT_NODEJS_PATH") and shutil.which("node"):
             env["PLAYWRIGHT_NODEJS_PATH"] = shutil.which("node")
@@ -245,6 +308,7 @@ class ScrapeManager:
                     self.command(), stdout=subprocess.DEVNULL, stderr=log, env=self.environment(),
                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                 )
+                self.guard.protect(proc)
                 with self.lock:
                     self.proc = proc
                 while proc.poll() is None:

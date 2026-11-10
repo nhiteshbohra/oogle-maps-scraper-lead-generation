@@ -17,8 +17,6 @@ import (
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	runner.Banner()
-
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
@@ -37,8 +35,6 @@ func main() {
 		cancel()
 		os.Stderr.WriteString(err.Error() + "\n")
 
-		runner.Telemetry().Close()
-
 		os.Exit(1)
 	}
 
@@ -46,7 +42,6 @@ func main() {
 		os.Stderr.WriteString(err.Error() + "\n")
 
 		_ = runnerInstance.Close(ctx)
-		runner.Telemetry().Close()
 
 		cancel()
 
@@ -54,7 +49,6 @@ func main() {
 	}
 
 	_ = runnerInstance.Close(ctx)
-	runner.Telemetry().Close()
 
 	cancel()
 

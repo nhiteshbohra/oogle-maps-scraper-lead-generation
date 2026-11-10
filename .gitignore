@@ -1,15 +1,38 @@
-# Leads and the user's work: scraped phone numbers must never be committed
-data/
+# Scraped Leads & Runtime Data (Phone numbers and private customer data must never be committed)
+data/*
+!data/.gitkeep
 archive/
 *.csv
 
-# Build output
+# Build Output & Binaries
+dist/
 *.exe
 bin/
 cache/
-vendor
+vendor/
 coverage.out
 
 # Python
 __pycache__/
 *.py[cod]
+
+# Local Credentials and Environment
+.env
+.env.*
+!.env.example
+!.env.sample
+.aws/
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Scrape sidecars
+*.log
+*.log.pass
+*.resume.json
+*.scrape.json
+*.leads.json
+*.edits.json

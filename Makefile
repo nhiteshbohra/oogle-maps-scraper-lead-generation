@@ -20,11 +20,14 @@ test-cover: ## outputs the coverage statistics
 	go tool cover -func coverage.out
 	rm coverage.out
 
-lint: ## runs the linter
-	go generate -v ./lint.go
+lint: ## runs the linter (needs golangci-lint installed)
+	golangci-lint run
 
-build: ## builds the scraper for 64-bit Windows
-	GOOS=windows GOARCH=amd64 go build -o $(APP_NAME).exe .
+build: ## builds the scraper for 64-bit Windows (stripped: no debug symbols, no local paths)
+	GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o $(APP_NAME).exe .
+
+release: ## builds dist/LeadFinder-v<version>.zip, the customer download
+	python make_release.py
 
 clean: ## clean build artifacts
 	rm -f $(APP_NAME).exe

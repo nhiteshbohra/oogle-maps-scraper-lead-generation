@@ -110,12 +110,6 @@ func WithExtraReviews() GmapJobOptions {
 	}
 }
 
-func WithWriterManagedCompletion() GmapJobOptions {
-	return func(j *GmapJob) {
-		j.WriterManagedCompletion = true
-	}
-}
-
 func WithGmapCompletionTracker(tracker CompletionTracker) GmapJobOptions {
 	return func(j *GmapJob) {
 		j.CompletionTracker = tracker

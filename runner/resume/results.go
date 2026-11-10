@@ -130,15 +130,6 @@ func entryIdentities(entry *gmaps.Entry) []string {
 	return identities
 }
 
-// EntryIdentity returns the preferred stable identity for entry.
-func EntryIdentity(entry *gmaps.Entry) string {
-	if entry == nil {
-		return ""
-	}
-
-	return firstNonEmpty(entry.PlaceID, entry.Cid, entry.DataID, entry.Link)
-}
-
 // LoadResultIdentities reads existing CSV or JSONL results into an IdentitySet.
 func LoadResultIdentities(path string, jsonl bool) (*IdentitySet, error) {
 	ids, err := loadResultIdentities(path, jsonl)
@@ -278,14 +269,4 @@ func addCSVValues(ids *IdentitySet, row []string, indexes map[string]int, names 
 
 		ids.Add(row[index])
 	}
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, value := range values {
-		if value = strings.TrimSpace(value); value != "" {
-			return value
-		}
-	}
-
-	return ""
 }

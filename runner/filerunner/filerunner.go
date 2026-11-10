@@ -6,16 +6,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
-	"time"
 
 	"github.com/gosom/google-maps-scraper/deduper"
 	"github.com/gosom/google-maps-scraper/exiter"
 	"github.com/gosom/google-maps-scraper/grid"
-	"github.com/gosom/google-maps-scraper/leadsdb"
 	"github.com/gosom/google-maps-scraper/runner"
 	"github.com/gosom/google-maps-scraper/runner/resume"
-	"github.com/gosom/google-maps-scraper/tlmt"
 	"github.com/gosom/scrapemate"
 	"github.com/gosom/scrapemate/adapters/writers/csvwriter"
 	"github.com/gosom/scrapemate/adapters/writers/jsonwriter"
@@ -41,24 +37,12 @@ func New(cfg *runner.Config) (runner.Runner, error) {
 	}
 
 	if cfg.Resume {
-		if cfg.FastMode {
-			return nil, fmt.Errorf("-resume does not support fast mode")
-		}
-
 		if cfg.ResultsFile == "stdout" {
 			return nil, fmt.Errorf("-resume requires -results to be a file path")
 		}
 
 		if err := validateResumeFiles(cfg.ResultsFile); err != nil {
 			return nil, err
-		}
-
-		if cfg.CustomWriter != "" {
-			return nil, fmt.Errorf("-resume does not support custom writers")
-		}
-
-		if cfg.LeadsDBAPIKey != "" {
-			return nil, fmt.Errorf("-resume does not support LeadsDB output")
 		}
 	}
 
@@ -84,24 +68,6 @@ func New(cfg *runner.Config) (runner.Runner, error) {
 func (r *fileRunner) Run(ctx context.Context) (err error) {
 	var seedJobs []scrapemate.IJob
 
-	t0 := time.Now().UTC()
-
-	defer func() {
-		elapsed := time.Now().UTC().Sub(t0)
-		params := map[string]any{
-			"job_count": len(seedJobs),
-			"duration":  elapsed.String(),
-		}
-
-		if err != nil {
-			params["error"] = err.Error()
-		}
-
-		evt := tlmt.NewEvent("file_runner", params)
-
-		_ = runner.Telemetry().Send(ctx, evt)
-	}()
-
 	dedup := deduper.New()
 
 	if r.cfg.Resume {
@@ -112,10 +78,6 @@ func (r *fileRunner) Run(ctx context.Context) (err error) {
 	seedOpts := r.seedJobOptions()
 
 	if r.cfg.GridBBox != "" {
-		if r.cfg.FastMode {
-			return fmt.Errorf("-fast-mode cannot be used together with -grid-bbox")
-		}
-
 		bbox, bboxErr := grid.ParseBoundingBox(r.cfg.GridBBox)
 		if bboxErr != nil {
 			return fmt.Errorf("invalid -grid-bbox: %w", bboxErr)
@@ -139,14 +101,12 @@ func (r *fileRunner) Run(ctx context.Context) (err error) {
 		)
 	} else {
 		seedJobs, err = runner.CreateSeedJobs(
-			r.cfg.FastMode,
 			r.cfg.LangCode,
 			r.input,
 			r.cfg.MaxDepth,
 			r.cfg.Email,
 			r.cfg.GeoCoordinates,
 			r.cfg.Zoom,
-			r.cfg.Radius,
 			dedup,
 			exitMonitor,
 			r.cfg.ExtraReviews,
@@ -219,79 +179,60 @@ func (r *fileRunner) setInput() error {
 }
 
 func (r *fileRunner) setWriters() error {
-	switch {
-	case r.cfg.CustomWriter != "":
-		parts := strings.Split(r.cfg.CustomWriter, ":")
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid custom writer format: %s", r.cfg.CustomWriter)
+	if !r.cfg.Resume {
+		if err := removeResumeState(r.cfg.ResultsFile); err != nil {
+			return err
 		}
+	}
 
-		dir, pluginName := parts[0], parts[1]
+	var resultsWriter io.Writer
 
-		customWriter, err := runner.LoadCustomWriter(dir, pluginName)
+	switch r.cfg.ResultsFile {
+	case "stdout":
+		resultsWriter = os.Stdout
+	default:
+		f, err := r.openResultsFile()
 		if err != nil {
 			return err
 		}
 
-		r.writers = append(r.writers, customWriter)
-	case r.cfg.LeadsDBAPIKey != "":
-		r.writers = append(r.writers, leadsdb.New(r.cfg.LeadsDBAPIKey))
+		r.outfile = f
+
+		resultsWriter = r.outfile
+	}
+
+	switch {
+	case r.cfg.Resume:
+		if err := r.initResume(); err != nil {
+			return err
+		}
+
+		if r.cfg.JSON {
+			r.writers = append(r.writers, resume.NewJSONLAppendWriter(
+				resultsWriter,
+				r.resumeIDs,
+				r.resumeProgress,
+				r.outfile.Sync,
+			))
+		} else {
+			writeHeader, headerErr := r.shouldWriteCSVHeader()
+			if headerErr != nil {
+				return headerErr
+			}
+
+			r.writers = append(r.writers, resume.NewCSVAppendWriter(
+				csv.NewWriter(resultsWriter),
+				writeHeader,
+				r.resumeIDs,
+				r.resumeProgress,
+				r.outfile.Sync,
+			))
+		}
+	case r.cfg.JSON:
+		r.writers = append(r.writers, jsonwriter.NewJSONWriter(resultsWriter))
 	default:
-		if !r.cfg.Resume {
-			if err := removeResumeState(r.cfg.ResultsFile); err != nil {
-				return err
-			}
-		}
-
-		var resultsWriter io.Writer
-
-		switch r.cfg.ResultsFile {
-		case "stdout":
-			resultsWriter = os.Stdout
-		default:
-			f, err := r.openResultsFile()
-			if err != nil {
-				return err
-			}
-
-			r.outfile = f
-
-			resultsWriter = r.outfile
-		}
-
-		switch {
-		case r.cfg.Resume:
-			if err := r.initResume(); err != nil {
-				return err
-			}
-
-			if r.cfg.JSON {
-				r.writers = append(r.writers, resume.NewJSONLAppendWriter(
-					resultsWriter,
-					r.resumeIDs,
-					r.resumeProgress,
-					r.outfile.Sync,
-				))
-			} else {
-				writeHeader, headerErr := r.shouldWriteCSVHeader()
-				if headerErr != nil {
-					return headerErr
-				}
-
-				r.writers = append(r.writers, resume.NewCSVAppendWriter(
-					csv.NewWriter(resultsWriter),
-					writeHeader,
-					r.resumeIDs,
-					r.resumeProgress,
-					r.outfile.Sync,
-				))
-			}
-		case r.cfg.JSON:
-			r.writers = append(r.writers, jsonwriter.NewJSONWriter(resultsWriter))
-		default:
-			csvWriter := csvwriter.NewCsvWriter(csv.NewWriter(resultsWriter))
-			r.writers = append(r.writers, csvWriter)
-		}
+		csvWriter := csvwriter.NewCsvWriter(csv.NewWriter(resultsWriter))
+		r.writers = append(r.writers, csvWriter)
 	}
 
 	return nil
@@ -375,17 +316,13 @@ func (r *fileRunner) setApp() error {
 		)
 	}
 
-	if !r.cfg.FastMode {
-		if r.cfg.Debug {
-			opts = append(opts, scrapemateapp.WithJS(
-				scrapemateapp.Headfull(),
-				scrapemateapp.DisableImages(),
-			))
-		} else {
-			opts = append(opts, scrapemateapp.WithJS(scrapemateapp.DisableImages()))
-		}
+	if r.cfg.Debug {
+		opts = append(opts, scrapemateapp.WithJS(
+			scrapemateapp.Headfull(),
+			scrapemateapp.DisableImages(),
+		))
 	} else {
-		opts = append(opts, scrapemateapp.WithStealth("firefox"))
+		opts = append(opts, scrapemateapp.WithJS(scrapemateapp.DisableImages()))
 	}
 
 	opts = runner.AppendBrowserCapacityOptions(opts, r.cfg)

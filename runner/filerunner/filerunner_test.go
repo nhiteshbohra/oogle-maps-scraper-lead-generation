@@ -25,54 +25,6 @@ func TestNewRejectsResumeWithStdoutResults(t *testing.T) {
 	require.ErrorContains(t, err, "-resume requires -results to be a file path")
 }
 
-func TestNewRejectsResumeWithCustomWriter(t *testing.T) {
-	t.Parallel()
-
-	cfg := &runner.Config{
-		RunMode:      runner.RunModeFile,
-		InputFile:    "testdata/input.txt",
-		ResultsFile:  "results.csv",
-		CustomWriter: "/tmp:Writer",
-		Resume:       true,
-	}
-
-	_, err := filerunner.New(cfg)
-
-	require.ErrorContains(t, err, "-resume does not support custom writers")
-}
-
-func TestNewRejectsResumeWithLeadsDB(t *testing.T) {
-	t.Parallel()
-
-	cfg := &runner.Config{
-		RunMode:       runner.RunModeFile,
-		InputFile:     "testdata/input.txt",
-		ResultsFile:   "results.csv",
-		LeadsDBAPIKey: "key",
-		Resume:        true,
-	}
-
-	_, err := filerunner.New(cfg)
-
-	require.ErrorContains(t, err, "-resume does not support LeadsDB output")
-}
-
-func TestNewRejectsResumeWithFastMode(t *testing.T) {
-	t.Parallel()
-
-	cfg := &runner.Config{
-		RunMode:     runner.RunModeFile,
-		InputFile:   "testdata/input.txt",
-		ResultsFile: "results.csv",
-		Resume:      true,
-		FastMode:    true,
-	}
-
-	_, err := filerunner.New(cfg)
-
-	require.ErrorContains(t, err, "-resume does not support fast mode")
-}
-
 func TestNewResumeOpensResultsFileForAppend(t *testing.T) {
 	t.Parallel()
 
@@ -182,7 +134,6 @@ func testConfig(inputPath, resultsPath string) *runner.Config {
 		MaxDepth:                 1,
 		LangCode:                 "en",
 		Zoom:                     15,
-		Radius:                   10000,
 		ExitOnInactivityDuration: 0,
 		MaxPagesPerBrowser:       1,
 	}

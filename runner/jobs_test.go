@@ -40,14 +40,12 @@ func TestCreateSeedJobsRejectsEmptyQueryBeforeCustomID(t *testing.T) {
 	t.Parallel()
 
 	_, err := runner.CreateSeedJobs(
-		false,
 		"en",
 		strings.NewReader("  #!#my-id\n"),
 		10,
 		false,
 		"",
 		15,
-		10000,
 		nil,
 		nil,
 		false,
@@ -88,14 +86,12 @@ func TestCreateSeedJobsSkipsCompletedInputs(t *testing.T) {
 	t.Parallel()
 
 	jobs, err := runner.CreateSeedJobs(
-		false,
 		"en",
 		strings.NewReader("coffee\ntea\n"),
 		10,
 		false,
 		"",
 		15,
-		10000,
 		nil,
 		nil,
 		false,
@@ -119,14 +115,12 @@ func TestCreateSeedJobsAddsCompletionTracker(t *testing.T) {
 	tracker := &recordingSeedTracker{}
 
 	jobs, err := runner.CreateSeedJobs(
-		false,
 		"en",
 		strings.NewReader("coffee\n"),
 		10,
 		false,
 		"",
 		15,
-		10000,
 		nil,
 		nil,
 		false,
