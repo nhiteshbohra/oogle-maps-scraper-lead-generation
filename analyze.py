@@ -990,7 +990,48 @@ a:hover{text-decoration:underline}
 .ok{color:var(--good)}
 .tag{display:inline-block;border:1px solid var(--border);border-radius:10px;padding:0 7px;font-size:12px;color:var(--ink2);white-space:nowrap}
 .bar-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px}
-.pager{display:flex;gap:8px;align-items:center}
+.pager{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pager-nav{display:inline-flex;gap:3px;align-items:center}
+.pager-btn{min-width:30px;height:28px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);cursor:pointer;user-select:none;transition:background .15s,border-color .15s}
+.pager-btn:hover:not(:disabled){background:var(--wash);border-color:var(--bar)}
+.pager-btn.active{background:var(--bar);color:#fff!important;border-color:var(--bar);font-weight:700}
+.pager-btn:disabled{opacity:.35;cursor:not-allowed}
+.pager-ellipsis{padding:0 3px;color:var(--muted);font-size:12px}
+.pager-jump{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--ink2)}
+.pager-jump input{width:48px;height:28px;padding:2px 4px;text-align:center;font-size:12px}
+.pager-size{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--ink2)}
+.pager-size select{height:28px;padding:2px 6px;font-size:12px}
+.bar-bottom{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--grid)}
+.lead-select{border:1px solid var(--grid);border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600;cursor:pointer;background-color:var(--surface);outline:none;transition:all .15s}
+.lead-select.new{color:var(--muted);border-color:var(--grid)}
+.lead-select.called{background:#fef3c7;color:#92400e;border-color:#fde68a}
+.lead-select.interested{background:#dbeafe;color:#1e40af;border-color:#bfdbfe}
+.lead-select.rejected{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+.lead-select.customer{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+@media (prefers-color-scheme:dark){
+  .lead-select.called{background:#451a03;color:#fde68a;border-color:#78350f}
+  .lead-select.interested{background:#172554;color:#93c5fd;border-color:#1e3a8a}
+  .lead-select.rejected{background:#450a0a;color:#fca5a5;border-color:#7f1d1d}
+  .lead-select.customer{background:#052e16;color:#86efac;border-color:#14532d}
+}
+.wa-link{display:inline-flex;align-items:center;gap:3px;background:#25d366;color:#fff!important;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;text-decoration:none!important}
+.wa-link:hover{opacity:.9}
+.copy-btn{display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;color:var(--muted);padding:2px 4px;font-size:12px;border-radius:3px;vertical-align:middle}
+.copy-btn:hover{color:var(--bar);background:var(--wash)}
+.score-pill{display:inline-block;padding:2px 7px;border-radius:4px;font-weight:700;font-size:12px}
+.score-pill.hi{background:#dcfce7;color:#166534}
+.score-pill.mid{background:#fef9c3;color:#854d0e}
+.score-pill.lo{background:var(--grid);color:var(--muted)}
+@media (prefers-color-scheme:dark){
+  .score-pill.hi{background:#052e16;color:#86efac}
+  .score-pill.mid{background:#422006;color:#fde047}
+}
+.search-box{position:relative;display:inline-flex;align-items:center}
+.search-box input{padding-right:24px}
+.search-clear{position:absolute;right:6px;border:none;background:transparent;cursor:pointer;color:var(--muted);font-size:15px;padding:0 4px;display:none;line-height:1}
+.search-clear:hover{color:var(--ink)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--page);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s ease}
+.toast.show{opacity:1}
 #map{height:460px;border-radius:8px}
 .empty{color:var(--muted);padding:20px 0;text-align:center}
 #panel{position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);z-index:2000;background:var(--surface);
@@ -1027,7 +1068,10 @@ a:hover{text-decoration:underline}
 </div>
 
 <div class="filters card">
-  <input id="f-q" type="search" placeholder="Search name, type, service, address">
+  <div class="search-box">
+    <input id="f-q" type="search" placeholder="Search name, type, service, address">
+    <button id="f-q-clear" class="search-clear" title="Clear search">&times;</button>
+  </div>
   <select id="f-cat" aria-label="Category"></select>
   <select id="f-loc" aria-label="Locality"></select>
   <select class="adv" id="f-pin" aria-label="Pincode"></select>
@@ -1116,15 +1160,19 @@ a:hover{text-decoration:underline}
 
 <div class="card">
   <div class="bar-top">
-    <h2 style="margin:0">Places <span class="dim" style="font-weight:400" id="count"></span>
-      <span class="dim" style="font-weight:400">- click a row for full details</span></h2>
-    <div class="pager">
-      <button id="prev">Prev</button><span id="page" class="dim"></span><button id="next">Next</button>
-      <button id="export">Export filtered CSV</button>
+    <div>
+      <h2 style="margin:0;display:inline-block">Places <span class="dim" style="font-weight:400" id="count"></span></h2>
+      <span class="dim" style="font-weight:400;margin-left:8px">- click a row for full details</span>
     </div>
+    <div class="pager" id="pager-top"></div>
   </div>
   <div class="scroll"><table id="t-places"></table></div>
+  <div class="bar-bottom">
+    <div class="dim" id="showing-range"></div>
+    <div class="pager" id="pager-bottom"></div>
+  </div>
 </div>
+<div id="toast" class="toast"></div>
 </main>
 
 <aside id="panel" aria-label="Place details"></aside>
@@ -1140,8 +1188,14 @@ a:hover{text-decoration:underline}
 // 24 business fit for digital services (1 good, 0 low), 25 saved reviews from the last 3 months,
 // 26 percent of ratings that are 1-2 star (-1 without ratings),
 // 27 flags (1 = category guessed from the name, 2 = locality worked out by us, 4 = edited by the user, 8 = added by the user)
+function remember(name, value) { try { localStorage.setItem(name, value); } catch (err) {} }
+function recall(name) { try { return localStorage.getItem(name); } catch (err) { return null; } }
+
 let DATA = [], epoch = 0, lastAdded = '', LEADS = {}, phoneCount = new Map();
-const PAGE_SIZE = 50, MAP_LIMIT = 4000, TOP_N = 15, REFRESH_MS = 10000, HOT_SCORE = 70, DAY_MINUTES = 1440;
+let PAGE_SIZE = 50;
+const savedPs = recall('lf-pagesize');
+if (savedPs !== null) { const parsed = parseInt(savedPs, 10); if (!isNaN(parsed)) PAGE_SIZE = parsed; }
+const MAP_LIMIT = 4000, TOP_N = 15, REFRESH_MS = 10000, HOT_SCORE = 70, DAY_MINUTES = 1440;
 const MIN_RATINGS_FOR_SHARE = 10, UNHAPPY_PERCENT = 20, FIRST_BUSY_HOUR = 6;
 const MIN_LOCALITY_PLACES = 5, MAP_DELAY_MS = 150, SEARCH_DELAY_MS = 250, LIVE_MAP_INTERVAL_MS = 60000;
 const BASIC_TILES = 4, SEARCHES_PER_MINUTE = 25, KM_PER_DEGREE = 111, SCRAPE_POLL_MS = 5000;
@@ -1157,6 +1211,178 @@ const WEB_NAMES = {o: 'Own website', s: 'Social / listing only', n: 'No website'
 const LEAD_NAMES = {new: 'Not contacted', called: 'Called', interested: 'Interested', rejected: 'Not interested', customer: 'Customer'};
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const NUMERIC_COLS = [10, 11, 20];
+
+function showToast(msg) {
+  let t = $('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.className = 'toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function copyText(text, label) {
+  if (!text) return;
+  const finish = () => showToast(label ? `${label} copied!` : 'Copied to clipboard!');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(finish).catch(() => {
+      fallbackCopy(text);
+      finish();
+    });
+  } else {
+    fallbackCopy(text);
+    finish();
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (_) {}
+  ta.remove();
+}
+
+function copyLeadSummary(key) {
+  const r = DATA.find(x => x[23] === key);
+  if (!r) return;
+  const status = leadStatus(r);
+  const text = `${r[0]}\nCategory: ${r[1]}\nPhone: ${r[5] || 'None'}\nAddress: ${r[4] || 'None'}\nWebsite: ${r[7] || 'None'}\nRating: ${r[10] > 0 ? r[10] + ' (' + r[11] + ' reviews)' : 'None'}\nLead score: ${r[20]}/100\nStatus: ${LEAD_NAMES[status] || status}`;
+  copyText(text, 'Lead details');
+}
+
+async function updateLeadStatus(key, status) {
+  const r = DATA.find(x => x[23] === key);
+  const title = r ? r[0] : 'Lead';
+  const existing = LEADS[key] || {};
+  const note = existing.note || '';
+  try {
+    const res = await fetch('/lead', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({key, status, note})
+    });
+    if (!res.ok) throw new Error(res.status);
+    if (status === 'new' && !note) {
+      delete LEADS[key];
+    } else {
+      LEADS[key] = {status, note, updated: new Date().toISOString().slice(0, 19)};
+    }
+    showToast(`${title}: ${LEAD_NAMES[status]}`);
+    filterRows();
+    renderTiles();
+    renderCharts();
+    renderPlaces();
+  } catch (err) {
+    showToast('Failed to save status - is analyze.py running?');
+  }
+}
+
+function getPagePills(currPage, totalPages) {
+  if (totalPages <= 7) {
+    return Array.from({length: totalPages}, (_, i) => i);
+  }
+  const pills = [];
+  pills.push(0);
+  if (currPage > 2) pills.push('...');
+  const start = Math.max(1, currPage - 1);
+  const end = Math.min(totalPages - 2, currPage + 1);
+  for (let i = start; i <= end; i++) {
+    pills.push(i);
+  }
+  if (currPage < totalPages - 3) pills.push('...');
+  pills.push(totalPages - 1);
+  return pills;
+}
+
+function renderPager(id, currPage, totalPages) {
+  const container = $(id);
+  if (!container) return;
+
+  const pills = getPagePills(currPage, totalPages);
+  const pillHtml = pills.map(p => {
+    if (p === '...') return `<span class="pager-ellipsis">&hellip;</span>`;
+    const num = p + 1;
+    const isAct = p === currPage;
+    return `<button class="pager-btn${isAct ? ' active' : ''}" data-page="${p}" title="Page ${num}">${num}</button>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="pager-size">
+      <span class="dim">Rows:</span>
+      <select class="p-size-select" title="Rows per page">
+        <option value="25"${PAGE_SIZE === 25 ? ' selected' : ''}>25</option>
+        <option value="50"${PAGE_SIZE === 50 ? ' selected' : ''}>50</option>
+        <option value="100"${PAGE_SIZE === 100 ? ' selected' : ''}>100</option>
+        <option value="250"${PAGE_SIZE === 250 ? ' selected' : ''}>250</option>
+        <option value="-1"${PAGE_SIZE === -1 ? ' selected' : ''}>All</option>
+      </select>
+    </div>
+    <div class="pager-nav">
+      <button class="pager-btn p-first" title="First page (Home)" ${currPage === 0 ? 'disabled' : ''}>&laquo;</button>
+      <button class="pager-btn p-prev" title="Previous page (Left arrow)" ${currPage === 0 ? 'disabled' : ''}>&lsaquo;</button>
+      <div class="pager-pills" style="display:inline-flex;gap:3px;align-items:center">${pillHtml}</div>
+      <button class="pager-btn p-next" title="Next page (Right arrow)" ${currPage >= totalPages - 1 ? 'disabled' : ''}>&rsaquo;</button>
+      <button class="pager-btn p-last" title="Last page (End)" ${currPage >= totalPages - 1 ? 'disabled' : ''}>&raquo;</button>
+    </div>
+    <div class="pager-jump">
+      <span class="dim">Page:</span>
+      <input type="number" class="p-jump-input" min="1" max="${totalPages}" value="${currPage + 1}" title="Type page number and press Enter">
+    </div>
+    <button class="p-export-btn" title="Export matching places as CSV">Export CSV</button>
+  `;
+
+  const sizeSelect = container.querySelector('.p-size-select');
+  if (sizeSelect) {
+    sizeSelect.onchange = e => {
+      PAGE_SIZE = +e.target.value;
+      remember('lf-pagesize', PAGE_SIZE);
+      page = 0;
+      renderPlaces();
+    };
+  }
+  const btnFirst = container.querySelector('.p-first');
+  if (btnFirst) btnFirst.onclick = () => { if (page > 0) { page = 0; renderPlaces(); } };
+  const btnPrev = container.querySelector('.p-prev');
+  if (btnPrev) btnPrev.onclick = () => { if (page > 0) { page--; renderPlaces(); } };
+  const btnNext = container.querySelector('.p-next');
+  if (btnNext) btnNext.onclick = () => { if (page < totalPages - 1) { page++; renderPlaces(); } };
+  const btnLast = container.querySelector('.p-last');
+  if (btnLast) btnLast.onclick = () => { if (page < totalPages - 1) { page = totalPages - 1; renderPlaces(); } };
+
+  container.querySelectorAll('.pager-pills button').forEach(btn => {
+    btn.onclick = () => {
+      page = +btn.dataset.page;
+      renderPlaces();
+    };
+  });
+
+  const jumpInput = container.querySelector('.p-jump-input');
+  if (jumpInput) {
+    jumpInput.onkeydown = e => {
+      if (e.key === 'Enter') {
+        const val = parseInt(jumpInput.value, 10);
+        if (val >= 1 && val <= totalPages) {
+          page = val - 1;
+          renderPlaces();
+        } else {
+          jumpInput.value = currPage + 1;
+        }
+      }
+    };
+  }
+
+  const exportBtn = container.querySelector('.p-export-btn');
+  if (exportBtn) exportBtn.onclick = exportCsv;
+}
 
 let sortCol = 20, sortDir = -1, page = 0, rows = [], openKey = '';
 
@@ -1336,23 +1562,61 @@ function renderPlaces() {
     const x = a[sortCol], y = b[sortCol];
     return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * sortDir || b[11] - a[11];
   });
-  const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  page = Math.min(page, pages - 1);
+  const pageSize = PAGE_SIZE === -1 ? (sorted.length || 1) : PAGE_SIZE;
+  const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  page = Math.min(Math.max(0, page), pages - 1);
+  const startIdx = page * pageSize;
+  const endIdx = PAGE_SIZE === -1 ? sorted.length : Math.min(startIdx + pageSize, sorted.length);
+  const visibleRows = sorted.slice(startIdx, endIdx);
+
   const head = '<tr>' + COLS.map(([name, idx, num]) => idx < 0 ? `<th>${name}</th>` :
     `<th class="sort${num ? ' num' : ''}" data-i="${idx}">${name}${sortCol === idx ? (sortDir > 0 ? ' &#9650;' : ' &#9660;') : ''}</th>`).join('') + '</tr>';
-  const body = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map(r => {
+  const body = visibleRows.map(r => {
     const open = openNow(r), status = leadStatus(r);
-    return `<tr class="click" data-key="${esc(r[23])}"><td><b>${esc(r[0])}</b>${r[27] & 8 ? ' <span class="tag">added by me</span>' : r[27] & 4 ? ' <span class="tag">edited</span>' : ''}
-      <div class="dim">${esc(r[4])}${r[3] && !r[4].includes(r[3]) ? ' - ' + esc(r[3]) : ''}</div>${isClosed(r) ? `<div class="closed">${esc(r[15])}</div>` : ''}</td>
-      <td>${esc(r[1])}${r[27] & 1 ? ' <span class="dim">(guessed)</span>' : ''}${r[17] ? `<div class="dim">${esc(r[17])}</div>` : ''}${r[18] ? `<div class="dim">Offers: ${esc(r[18])}</div>` : ''}
-        ${r[19] ? `<div class="dim">${esc(r[19])}${open === null ? '' : open ? ' <span class="ok">(open now)</span>' : ' (closed now)'}</div>` : ''}</td>
+    const scoreCls = r[20] >= 80 ? 'hi' : r[20] >= 50 ? 'mid' : 'lo';
+    const wa = waLink(r);
+    const leadOpts = Object.keys(LEAD_NAMES).map(k =>
+      `<option value="${k}"${status === k ? ' selected' : ''}>${LEAD_NAMES[k]}</option>`
+    ).join('');
+    return `<tr class="click" data-key="${esc(r[23])}">
+      <td>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">
+          <b>${esc(r[0])}</b>
+          <button class="copy-btn" title="Copy business info" onclick="event.stopPropagation();copyLeadSummary('${esc(r[23])}')">&#128203;</button>
+        </div>
+        ${r[27] & 8 ? ' <span class="tag">added by me</span>' : r[27] & 4 ? ' <span class="tag">edited</span>' : ''}
+        <div class="dim">${esc(r[4])}${r[3] && !r[4].includes(r[3]) ? ' - ' + esc(r[3]) : ''}</div>
+        ${isClosed(r) ? `<div class="closed">${esc(r[15])}</div>` : ''}
+      </td>
+      <td>
+        ${esc(r[1])}${r[27] & 1 ? ' <span class="dim">(guessed)</span>' : ''}
+        ${r[17] ? `<div class="dim">${esc(r[17])}</div>` : ''}
+        ${r[18] ? `<div class="dim">Offers: ${esc(r[18])}</div>` : ''}
+        ${r[19] ? `<div class="dim">${esc(r[19])}${open === null ? '' : open ? ' <span class="ok">(open now)</span>' : ' (closed now)'}</div>` : ''}
+      </td>
       <td>${esc(r[2])}${r[27] & 2 && r[2] !== '(unknown)' ? ' <span class="dim">(worked out)</span>' : ''}</td>
-      <td style="white-space:nowrap">${r[5] ? `<a href="tel:${esc(r[5])}">${esc(r[5])}</a>${waLink(r) ? `<div><a href="${waLink(r)}" target="_blank" rel="noopener">WhatsApp</a></div>` : ''}` : '<span class="dim">none</span>'}</td>
+      <td style="white-space:nowrap">
+        ${r[5] ? `
+          <div style="display:flex;align-items:center;gap:3px">
+            <a href="tel:${esc(r[5])}" onclick="event.stopPropagation()">${esc(r[5])}</a>
+            <button class="copy-btn" title="Copy phone" onclick="event.stopPropagation();copyText('${esc(r[5])}', 'Phone')">&#128203;</button>
+          </div>
+          ${wa ? `<div style="margin-top:3px"><a class="wa-link" href="${wa}" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128172; WhatsApp</a></div>` : ''}
+        ` : '<span class="dim">none</span>'}
+      </td>
       <td>${siteLink(r)}</td>
-      <td class="num">${r[10] > 0 ? r[10].toFixed(1) : '<span class="dim">-</span>'}${unhappy(r) ? `<div class="closed">${r[26]}% low</div>` : ''}</td>
+      <td class="num">
+        ${r[10] > 0 ? `<span style="color:#d97706">&#9733;</span> ${r[10].toFixed(1)}` : '<span class="dim">-</span>'}
+        ${unhappy(r) ? `<div class="closed" style="font-size:11px">${r[26]}% low</div>` : ''}
+      </td>
       <td class="num">${fmt(r[11])}${r[25] ? `<div class="dim">${r[25]} recent</div>` : ''}</td>
-      <td class="num"><b>${r[20]}</b></td>
-      <td>${status === 'new' ? '<span class="dim">-</span>' : `<span class="tag">${LEAD_NAMES[status]}</span>`}</td></tr>`;
+      <td class="num"><span class="score-pill ${scoreCls}">${r[20]}</span></td>
+      <td>
+        <select class="lead-select ${status}" onclick="event.stopPropagation()" onchange="updateLeadStatus('${esc(r[23])}', this.value)" title="Change lead status">
+          ${leadOpts}
+        </select>
+      </td>
+    </tr>`;
   }).join('');
   $('t-places').innerHTML = head + (body || '<tr><td colspan="9" class="empty">No places match these filters</td></tr>');
   $('t-places').querySelectorAll('th.sort').forEach(th => th.onclick = () => {
@@ -1360,11 +1624,17 @@ function renderPlaces() {
     if (sortCol === i) sortDir = -sortDir; else { sortCol = i; sortDir = NUMERIC_COLS.includes(i) ? -1 : 1; }
     page = 0; renderPlaces();
   });
-  $('t-places').querySelectorAll('tr.click').forEach(tr => tr.onclick = ev => { if (!ev.target.closest('a')) openPlace(tr.dataset.key); });
+  $('t-places').querySelectorAll('tr.click').forEach(tr => tr.onclick = ev => {
+    if (!ev.target.closest('a, button, select')) openPlace(tr.dataset.key);
+  });
+  const rangeText = sorted.length === 0 ? '0 places' :
+    `Showing ${fmt(startIdx + 1)}–${fmt(endIdx)} of ${fmt(sorted.length)} places`;
   $('count').textContent = `- ${fmt(rows.length)} match`;
-  $('page').textContent = `Page ${page + 1} of ${pages}`;
-  $('prev').disabled = page === 0;
-  $('next').disabled = page >= pages - 1;
+  const rangeEl = $('showing-range');
+  if (rangeEl) rangeEl.textContent = rangeText;
+
+  renderPager('pager-top', page, pages);
+  renderPager('pager-bottom', page, pages);
 }
 
 let map, layer, fitted = false, mapTimer = 0, lastMapDraw = 0;
@@ -1569,6 +1839,10 @@ async function saveLead(key) {
 }
 
 function exportCsv() {
+  if (!rows || rows.length === 0) {
+    showToast('No places to export');
+    return;
+  }
   const head = ['title', 'category', 'locality', 'pincode', 'address', 'phone', 'phone_type', 'website', 'website_type', 'emails',
     'rating', 'reviews', 'latitude', 'longitude', 'claimed', 'status', 'maps_link', 'details', 'services', 'hours',
     'lead_score', 'months_since_review', 'lead_status', 'lead_note', 'business_fit', 'reviews_last_3_months', 'low_rating_percent', 'guessed_fields', 'edited_by_me'];
@@ -1580,10 +1854,11 @@ function exportCsv() {
     return out.concat([r[22] >= 0 ? r[22] : '', lead.status || 'new', lead.note || '', r[24] ? 'good' : 'low', r[25], r[26] >= 0 ? r[26] : '', ['', 'category', 'locality', 'category, locality'][r[27] & 3], r[27] & 8 ? 'added' : r[27] & 4 ? 'edited' : '']).map(cell).join(',');
   }));
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], {type: 'text/csv'}));
-  a.download = 'leads_filtered.csv';
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], {type: 'text/csv'}));
+  a.download = `leads_filtered_${rows.length}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
+  showToast(`Exported ${fmt(rows.length)} places to CSV`);
 }
 
 const FILTER_IDS = ['f-q', 'f-cat', 'f-loc', 'f-pin', 'f-web', 'f-phone', 'f-rating', 'f-rev', 'f-score', 'f-hours', 'f-active', 'f-neg', 'f-claim', 'f-closed', 'f-fit', 'f-lead'];
@@ -1629,22 +1904,58 @@ FILTER_IDS.filter(id => id !== 'f-q').forEach(id => $(id).addEventListener('chan
   applyFilters();
 }));
 let searchTimer = 0;
-$('f-q').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(applyFilters, SEARCH_DELAY_MS); });
+const qInput = $('f-q');
+const qClear = $('f-q-clear');
+if (qInput) {
+  qInput.addEventListener('input', () => {
+    if (qClear) qClear.style.display = qInput.value ? 'block' : 'none';
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyFilters, SEARCH_DELAY_MS);
+  });
+  if (qClear) {
+    qClear.onclick = () => {
+      qInput.value = '';
+      qClear.style.display = 'none';
+      applyFilters();
+      qInput.focus();
+    };
+  }
+}
+// Keyboard shortcuts for interactive navigation
+document.addEventListener('keydown', ev => {
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes((document.activeElement || {}).tagName)) {
+    if (ev.key === 'Escape') document.activeElement.blur();
+    return;
+  }
+  if (ev.key === 'ArrowLeft' || ev.key === '[') {
+    if (page > 0) { page--; renderPlaces(); }
+  } else if (ev.key === 'ArrowRight' || ev.key === ']') {
+    const pageSize = PAGE_SIZE === -1 ? (rows.length || 1) : PAGE_SIZE;
+    const pages = Math.max(1, Math.ceil(rows.length / pageSize));
+    if (page < pages - 1) { page++; renderPlaces(); }
+  } else if (ev.key === '/') {
+    ev.preventDefault();
+    if (qInput) { qInput.focus(); qInput.select(); }
+  } else if (ev.key === 'Escape') {
+    if (openKey) closePlace();
+  }
+});
+
 // Show places that arrived while the user was typing or had a dropdown open.
 document.addEventListener('focusout', () => setTimeout(() => { if (dirty) showNewData(); }, 0));
-$('reset').onclick = () => { resetFilters(); applyFilters(); };
+$('reset').onclick = () => {
+  resetFilters();
+  if (qClear) qClear.style.display = 'none';
+  applyFilters();
+};
 document.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
   resetFilters();
   Object.entries(PRESETS[b.dataset.preset]).forEach(([id, v]) => $(id).value = v);
+  if (qClear) qClear.style.display = (qInput && qInput.value) ? 'block' : 'none';
   applyFilters();
 });
-$('prev').onclick = () => { page--; renderPlaces(); };
-$('next').onclick = () => { page++; renderPlaces(); };
-$('export').onclick = exportCsv;
 
 // ---- simple view: a few filters by default, the rest behind two buttons ----
-function remember(name, value) { try { localStorage.setItem(name, value); } catch (err) { /* private mode: just not remembered */ } }
-function recall(name) { try { return localStorage.getItem(name); } catch (err) { return null; } }
 
 function setSimple(simple) {
   document.body.classList.toggle('simple', simple);
