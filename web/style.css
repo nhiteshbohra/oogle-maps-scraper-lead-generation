@@ -3,6 +3,7 @@
 @media (prefers-color-scheme:dark){:root{color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;
   --grid:#2c2c2a;--border:rgba(255,255,255,.10);--bar:#3987e5;--wash:rgba(57,135,229,.16);--good:#0ca30c;--crit:#e66767}}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:1320px;margin:0 auto;padding:20px 16px 60px}
 h1{font-size:20px;margin:0}
@@ -89,7 +90,8 @@ button.primary:hover{background:var(--bar);opacity:.88}
 .tag.hidden-tag{background:var(--crit);color:#fff;border-color:var(--crit)}
 .select-col{width:36px;text-align:center;vertical-align:middle;padding:6px 4px}
 .row-checkbox,#select-all-places{width:16px;height:16px;cursor:pointer;vertical-align:middle}
-.bulk-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:var(--ink);color:var(--page);border-radius:8px;padding:8px 14px;margin-bottom:10px;box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.bulk-bar{display:none;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:var(--ink);color:var(--page);border-radius:8px;padding:8px 14px;margin-bottom:10px;box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.bulk-bar.open{display:flex!important}
 .bulk-info{font-weight:600;font-size:13px}
 .bulk-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .bulk-actions select{background:var(--surface);color:var(--ink);padding:3px 8px;font-size:12px;border-radius:4px}
@@ -105,7 +107,8 @@ button.primary:hover{background:var(--bar);opacity:.88}
 .scope-adjust-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 
 /* Modal Directory */
-.modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);z-index:3000;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-backdrop.open{display:flex!important}
 .modal-content{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:min(900px,100%);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 36px rgba(0,0,0,.35)}
 .modal-header{display:flex;justify-content:space-between;align-items:flex-start;padding:16px;border-bottom:1px solid var(--grid)}
 .modal-close{border:none;background:transparent;font-size:22px;color:var(--muted);cursor:pointer;padding:0 6px;line-height:1}

@@ -1313,6 +1313,7 @@ function updateBulkToolbar() {
   if (!bar) return;
   const count = selectedLeadKeys.size;
   bar.hidden = count === 0;
+  bar.classList.toggle('open', count > 0);
   if ($('bulk-count')) $('bulk-count').textContent = fmt(count);
 }
 
@@ -1559,6 +1560,22 @@ function updateCategoryModalCount() {
   }
 }
 
+function openCategoryModal() {
+  const m = $('modal-categories');
+  if (m) {
+    m.hidden = false;
+    m.classList.add('open');
+  }
+}
+
+function closeCategoryModal() {
+  const m = $('modal-categories');
+  if (m) {
+    m.hidden = true;
+    m.classList.remove('open');
+  }
+}
+
 if ($('btn-browse-categories')) {
   $('btn-browse-categories').onclick = async () => {
     await loadCategoriesDirectory();
@@ -1567,13 +1584,18 @@ if ($('btn-browse-categories')) {
     Object.values(ALL_CATEGORIES).flat().forEach(c => {
       if (existing.has(c.toLowerCase())) selectedModalCategories.add(c.toLowerCase());
     });
-    $('modal-categories').hidden = false;
+    openCategoryModal();
     renderCategoryModalList();
   };
 }
 
-if ($('btn-close-cat-modal')) $('btn-close-cat-modal').onclick = () => $('modal-categories').hidden = true;
-if ($('btn-cancel-cat-modal')) $('btn-cancel-cat-modal').onclick = () => $('modal-categories').hidden = true;
+if ($('btn-close-cat-modal')) $('btn-close-cat-modal').onclick = closeCategoryModal;
+if ($('btn-cancel-cat-modal')) $('btn-cancel-cat-modal').onclick = closeCategoryModal;
+if ($('modal-categories')) {
+  $('modal-categories').addEventListener('click', ev => {
+    if (ev.target === $('modal-categories')) closeCategoryModal();
+  });
+}
 
 if ($('cat-modal-search')) {
   $('cat-modal-search').addEventListener('input', () => {
@@ -1616,7 +1638,7 @@ if ($('btn-apply-categories')) {
       toAdd.push(lookup[cLower] || cLower);
     });
     addCampaignKeywords(toAdd);
-    $('modal-categories').hidden = true;
+    closeCategoryModal();
     showToast(`Added ${toAdd.length} categories to search campaign`);
   };
 }
@@ -1626,7 +1648,12 @@ document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-open]');
   if (el) { ev.preventDefault(); openPlace(el.dataset.open); }
 });
-document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closePlace(); });
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape') {
+    closePlace();
+    closeCategoryModal();
+  }
+});
 
 fetch('/leads.json').then(res => res.json()).then(leads => { LEADS = leads; }).catch(() => {}).finally(() => {
   load();
