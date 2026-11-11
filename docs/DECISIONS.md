@@ -71,3 +71,7 @@ Append-only record of design decisions. If a decision is reversed, a new entry i
 - **Decision**: Encapsulate the scraper executable inside a Windows Job Object (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`).
 - **Why**: Ensures that closing the dashboard command window automatically terminates child scraper processes, preventing orphaned browser instances.
 
+## ADR-017 (2026-11-11): Client-side smart pagination and in-table outreach actions
+- **Decision**: Implement dynamic dual-placement pagination with configurable page sizing (`25`, `50`, `100`, `250`, `All`), numbered smart pills, and inline lead status modification directly on table rows.
+- **Why**: Allows users managing large datasets (10,000+ rows) to browse smoothly without DOM lag, navigate immediately at either end of the table, and qualify prospects without having to repeatedly open and close the detail drawer.
+

@@ -5,6 +5,9 @@
 - [x] Validate `make_release.py --version` parameter to reject path traversal components.
 - [x] Clean up and remove obsolete historical experimental scripts (`archive/`).
 - [x] Organize project documentation into dedicated `docs/` hierarchy (`docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/TODO.md`).
+- [x] Interactive UI pagination suite (dynamic per-page selector, smart numbered pills, dual top/bottom controls, quick jump).
+- [x] In-table lead qualification (inline status selector, 1-click phone/summary copy, WhatsApp direct links).
+- [x] Keyboard navigation shortcuts (arrow keys for pagination, '/' to search, 'Esc' to dismiss).
 - [ ] Add option in dashboard UI to hide or delete individual businesses from active view.
 - [ ] Code-signing certificate for Windows releases to prevent SmartScreen untrusted binary warnings on fresh PCs.
 - [ ] Extract additional place metadata during scraping: owner review responses, booking links, and linked social profiles.
