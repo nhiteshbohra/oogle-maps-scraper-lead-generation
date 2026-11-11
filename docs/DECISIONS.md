@@ -83,3 +83,7 @@ Append-only record of design decisions. If a decision is reversed, a new entry i
 - **Decision**: Extract the monolithic 1,300+ line embedded HTML/CSS/JS template (`REPORT_TEMPLATE`) from `analyze.py` into dedicated static assets in `web/` (`index.html`, `style.css`, `app.js`) served directly by the Python HTTP handler.
 - **Why**: Drastically improves codebase modularity and developer ergonomics (proper HTML/CSS/JS syntax highlighting, linting, formatting), slashes `analyze.py` file size by over 55%, and decouples frontend UI enhancements from backend Python logic without requiring any external build tooling.
 
+## ADR-020 (2026-11-11): Dedicated full-page Campaign Manager & Target Keyword Studio
+- **Decision**: Introduce a top-level tabbed navigation separating "🎯 Target & Scrape" (Campaign Manager) from "📋 Leads & CRM". Replace the slide-out drawer with a dedicated full-screen workspace featuring interactive keyword chips, category pack quick-selection, bulk keyword pasting, interactive geocoded area mapping, live search estimates, and real-time execution controls.
+- **Why**: Dramatically improves onboarding for new users starting from scratch with 0 leads. Empowers users to configure, manage, and monitor their targeted business campaigns entirely from the browser without ever needing terminal commands or manual configuration files.
+

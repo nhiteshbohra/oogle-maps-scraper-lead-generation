@@ -8,9 +8,9 @@ main{max-width:1320px;margin:0 auto;padding:20px 16px 60px}
 h1{font-size:20px;margin:0}
 h2{font-size:14px;margin:0 0 10px;font-weight:600}
 h3{font-size:13px;margin:18px 0 6px;font-weight:600}
-.sub{color:var(--muted);font-size:12px;margin:2px 0 16px}
+.sub{color:var(--muted);font-size:12px;margin:2px 0 0}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
-.filters{position:sticky;top:0;z-index:1000;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.filters{position:sticky;top:60px;z-index:1000;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 input,select,textarea,button,a.btn{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--border);
   border-radius:6px;padding:6px 8px}
 .filters input,.filters select{max-width:190px}
@@ -20,12 +20,70 @@ button,a.btn{cursor:pointer;text-decoration:none;display:inline-block}
 button:hover,a.btn:hover,select:hover{background:var(--wash);text-decoration:none}
 body.simple .adv{display:none!important}
 body:not(.show-insights) .ins{display:none}
+
+/* Top App Header & Navigation Tabs */
+.app-header{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1100}
+.header-inner{max-width:1320px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.brand-title{font-size:18px;font-weight:700;margin:0}
+.nav-tabs{display:inline-flex;gap:4px;background:var(--page);border:1px solid var(--border);border-radius:8px;padding:3px}
+.tab-btn{border:none;background:transparent;color:var(--ink2);padding:6px 14px;font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.tab-btn:hover{color:var(--ink);background:var(--wash)}
+.tab-btn.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.tab-badge{background:var(--bar);color:#fff;font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px}
+
+/* Scrape status banner */
 .scrape-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
 .actions-row{display:flex;gap:8px;flex-wrap:wrap}
 button.primary{background:var(--bar);color:#fff;border-color:var(--bar)}
 button.primary:hover{background:var(--bar);opacity:.88}
 .progress{height:8px;background:var(--grid);border-radius:4px;overflow:hidden;margin:8px 0}
 .progress div{height:100%;background:var(--bar)}
+
+/* Campaign Builder View */
+.campaign-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.campaign-header h2{font-size:18px;margin:0 0 4px}
+.campaign-actions{display:flex;gap:8px;align-items:center}
+.campaign-launch-btn{font-size:13px;font-weight:600;padding:8px 16px}
+.campaign-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:16px}
+.location-search-row{display:flex;gap:8px;margin-top:8px}
+.campaign-map{height:260px;border-radius:8px;margin-top:8px;border:1px solid var(--border)}
+.form-grid{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;margin-top:8px}
+.estimate-box{background:var(--page);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:13px}
+
+/* Keywords Management */
+.kw-header-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.kw-quick-tools{display:flex;gap:6px}
+.pack-buttons-container{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.custom-kw-bar{display:flex;gap:8px}
+.kw-editor-section{border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:10px}
+.kw-mode-toggle{display:flex;align-items:center;gap:8px;margin-bottom:8px;border-bottom:1px solid var(--grid);padding-bottom:6px}
+.text-btn{border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:3px 6px;border-radius:4px}
+.text-btn:hover{color:var(--ink)}
+.text-btn.active{color:var(--bar);background:var(--wash)}
+.kw-chips-box{display:flex;flex-wrap:wrap;gap:6px;max-height:260px;overflow-y:auto;padding:4px}
+.kw-chip{display:inline-flex;align-items:center;gap:5px;background:var(--page);border:1px solid var(--border);border-radius:14px;padding:3px 8px;font-size:12px;color:var(--ink)}
+.kw-chip-remove{border:none;background:transparent;cursor:pointer;color:var(--muted);font-size:13px;padding:0;line-height:1;margin-left:2px}
+.kw-chip-remove:hover{color:var(--crit)}
+.empty-chips-hint{color:var(--muted);font-size:12px;padding:12px 0}
+
+/* Empty Hero Banner */
+.empty-hero{text-align:center;padding:40px 20px;margin-bottom:16px}
+.empty-hero h2{font-size:18px;margin-bottom:8px}
+.empty-hero p{color:var(--ink2);margin-bottom:16px;max-width:540px;margin-left:auto;margin-right:auto}
+.btn-large{font-size:14px;padding:8px 20px;font-weight:600}
+
+/* Utilities */
+.flex-1{flex:1}
+.mt-8{margin-top:8px}
+.mt-12{margin-top:12px}
+.crit{color:var(--crit)!important}
+.m-0{margin:0}
+.dim{color:var(--muted);font-weight:400}
+.mb-12{margin-bottom:12px}
+.section-title{margin-top:18px}
+.places-heading{margin:0;display:inline-block}
+.places-subtitle{margin-left:8px}
+
 #s-map{height:220px;border-radius:8px;margin-top:8px}
 #panel .form textarea{min-height:150px;margin:0}
 #panel .form select{width:100%}
@@ -63,11 +121,6 @@ tr.click{cursor:pointer}
 tr.click:hover{background:var(--wash)}
 a{color:var(--bar);text-decoration:none}
 a:hover{text-decoration:underline}
-.dim{color:var(--muted);font-weight:400}
-.mb-12{margin-bottom:12px}
-.section-title{margin-top:18px}
-.places-heading{margin:0;display:inline-block}
-.places-subtitle{margin-left:8px}
 .closed{color:var(--crit);font-size:12px}
 .ok{color:var(--good)}
 .tag{display:inline-block;border:1px solid var(--border);border-radius:10px;padding:0 7px;font-size:12px;color:var(--ink2);white-space:nowrap}
@@ -114,7 +167,7 @@ a:hover{text-decoration:underline}
 .search-clear:hover{color:var(--ink)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--page);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s ease}
 .toast.show{opacity:1}
-.btn-pack{font-size:11px;padding:3px 8px;border-radius:12px;background:var(--surface);border:1px solid var(--border);color:var(--ink2);cursor:pointer;transition:all .15s}
+.btn-pack{font-size:11px;padding:4px 9px;border-radius:12px;background:var(--surface);border:1px solid var(--border);color:var(--ink2);cursor:pointer;transition:all .15s}
 .btn-pack:hover{background:var(--wash);border-color:var(--bar);color:var(--bar)}
 #map{height:460px;border-radius:8px}
 .empty{color:var(--muted);padding:20px 0;text-align:center}
@@ -135,4 +188,3 @@ a:hover{text-decoration:underline}
 #panel .hours td{border:0;padding:1px 10px 1px 0}
 #panel .today td{font-weight:600}
 #panel .why{white-space:pre;font-variant-numeric:tabular-nums;color:var(--ink2);font-size:13px}
-

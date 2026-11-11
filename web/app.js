@@ -725,6 +725,8 @@ async function load() {
       showNewData();
     }
     $('total').textContent = `${fmt(DATA.length)} places in file`;
+    if ($('leads-badge')) $('leads-badge').textContent = fmt(DATA.length);
+    if ($('leads-empty-hero')) $('leads-empty-hero').hidden = DATA.length > 0;
     $('live').textContent = lastAdded ? `last added at ${lastAdded}` : 'watching for new places';
     $('live').className = '';
   } catch (err) {
@@ -851,198 +853,308 @@ async function scrapePost(path, body) {
 
 $('scrape-stop').onclick = () => scrapePost('/scrape/stop');
 $('scrape-continue').onclick = () => scrapePost('/scrape/start');
-$('scrape-open').onclick = openScrapePanel;
+// ---- Navigation: Tabs between Leads CRM and Target & Scrape Campaign ----
+function switchView(viewName) {
+  const isCampaign = viewName === 'campaign';
+  $('view-campaign').hidden = !isCampaign;
+  $('view-leads').hidden = isCampaign;
+  $('tab-campaign').classList.toggle('active', isCampaign);
+  $('tab-leads').classList.toggle('active', !isCampaign);
+  if (isCampaign) {
+    loadCampaignSettings();
+    setTimeout(() => { if (campaignMap) campaignMap.invalidateSize(); }, 120);
+  } else {
+    setTimeout(() => { if (map) map.invalidateSize(); }, 120);
+  }
+  window.location.hash = isCampaign ? 'campaign' : 'leads';
+}
+
+$('tab-leads').onclick = () => switchView('leads');
+$('tab-campaign').onclick = () => switchView('campaign');
+$('scrape-open').onclick = () => switchView('campaign');
+$('s-view-leads-btn').onclick = () => switchView('leads');
+$('btn-first-campaign').onclick = () => switchView('campaign');
+
+// ---- Campaign View: Location, Keyword Studio, Search Settings & Scraper Execution ----
+let campaignMap = null, campaignRectangle = null, campaignBbox = null;
+let campaignPacks = {}, campaignRecommended = [];
 
 function renderScrapeStatus() {
   const s = scrapeStatus;
-  if (!s || !$('s-status')) return;
+  if (!s) return;
   const percent = s.total ? Math.min(100, Math.round(100 * s.done / s.total)) : 0;
-  $('s-status').innerHTML = `
-    <div><b>Status:</b> ${esc(s.message)}</div>
-    ${s.area ? `<div class="dim">Area: ${esc(s.area)}</div>` : ''}
-    ${s.total ? `<div class="progress"><div style="width:${percent}%"></div></div>` : ''}
-    <div class="dim">${scrapeProgress(s)}</div>`;
-  $('s-start').textContent = s.state === 'running' || s.state === 'waiting' ? 'Stop search' : 'Start search';
-  $('s-start').className = s.state === 'running' || s.state === 'waiting' ? '' : 'primary';
+  const isRunning = s.state === 'running' || s.state === 'waiting';
+
+  if ($('s-main-status')) {
+    $('s-main-status').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div><b>Campaign Status:</b> ${esc(s.message)} ${s.area ? `&middot; <b>${esc(s.area)}</b>` : ''}</div>
+        <div class="dim">${scrapeProgress(s)}</div>
+      </div>
+      ${s.total ? `<div class="progress" style="margin-top:8px"><div style="width:${percent}%"></div></div>` : ''}
+    `;
+  }
+  if ($('s-start-main')) {
+    $('s-start-main').textContent = isRunning ? 'Stop Search' : 'Start Search';
+    $('s-start-main').className = isRunning ? 'campaign-launch-btn' : 'primary campaign-launch-btn';
+  }
 }
 
-async function openScrapePanel() {
-  openKey = '';
-  $('panel').classList.add('open');
-  $('panel').innerHTML = '<div class="head"><div class="name">Find businesses</div><button type="button" id="p-close">Close</button></div><p class="dim">Loading...</p>';
-  $('p-close').onclick = closePlace;
-  let s;
-  try { s = await (await fetch('/scrape.json')).json(); } catch (err) { $('panel').querySelector('p').textContent = 'Could not reach Lead Finder.'; return; }
-  scrapeStatus = s;
-  const saved = s.settings || {}, keywords = (saved.keywords && saved.keywords.length ? saved.keywords : s.recommended).join('\n');
-  let bbox = saved.bbox || null, areaMap = null, rectangle = null;
+async function loadCampaignSettings() {
+  try {
+    const res = await fetch('/scrape.json');
+    if (!res.ok) return;
+    const s = await res.json();
+    scrapeStatus = s;
+    campaignPacks = s.packs || {};
+    campaignRecommended = s.recommended || [];
+    const saved = s.settings || {};
+    if (saved.area && !$('s-area').value) $('s-area').value = saved.area;
+    if (saved.bbox && !campaignBbox) campaignBbox = saved.bbox;
+    if (saved.cell) $('s-cell').value = String(saved.cell);
+    if (saved.concurrency) $('s-speed').value = String(saved.concurrency);
 
-  $('panel').innerHTML = `
-    <div class="head"><div class="name">Find businesses</div><button type="button" id="p-close" aria-label="Close">Close</button></div>
-    <p class="dim">Lead Finder searches Google Maps square by square across the area, once for every business type, and adds what it finds to your list.</p>
-    <div id="s-status" class="card" style="margin-top:10px"></div>
-    <div id="s-form">
-      <h3>1. Where</h3>
-      <div style="display:flex;gap:8px"><input id="s-area" style="flex:1" placeholder="City or area, e.g. Jodhpur" value="${esc(saved.area || '')}"><button type="button" id="s-find">Find on map</button></div>
-      <div id="s-map"></div>
-      <div class="dim" id="s-size"></div>
-      <h3>2. Which businesses <span class="dim" style="font-weight:400" id="s-count"></span></h3>
-      <div style="margin-bottom:8px">
-        <div style="display:flex;gap:6px;margin-bottom:8px">
-          <input id="s-kw-input" placeholder="Add custom type (e.g. gym, salon, clinic)" style="flex:1">
-          <button type="button" id="s-kw-add">+ Add type</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:6px">
-          <span class="dim" style="font-size:11px">Packs:</span>
-          <button type="button" class="btn-pack" data-pack="high_value" title="Gyms, salons, dental, clinics, coaching, restaurants">+ High Value</button>
-          <button type="button" class="btn-pack" data-pack="healthcare" title="Dental, doctors, hospitals, pathology, labs">+ Healthcare</button>
-          <button type="button" class="btn-pack" data-pack="education" title="Coaching, institutes, tuition, schools">+ Education</button>
-          <button type="button" class="btn-pack" data-pack="food_hospitality" title="Restaurants, cafes, hotels, banquet">+ Dining</button>
-          <button type="button" class="btn-pack" data-pack="real_estate_home" title="Real estate, builders, interior, home services">+ Real Estate</button>
-          <button type="button" class="btn-pack" data-pack="retail_showrooms" title="Jewellery, clothing, mobile, electronics">+ Retail</button>
-          <button type="button" class="btn-pack" id="s-recommended" title="Load all 200+ curated keywords">All 200+</button>
-          <button type="button" class="btn-pack" id="s-clear-kw" style="color:var(--crit)">Clear</button>
-        </div>
-      </div>
-      <div class="form" style="grid-template-columns:1fr">
-        <textarea id="s-keywords" spellcheck="false" rows="7" placeholder="Type or paste one business type per line...">${esc(keywords)}</textarea>
-      </div>
-      <h3>3. How</h3>
-      <div class="form">
-        <label for="s-cell">Detail</label><select id="s-cell">
-          <option value="2">Standard - 2 km squares</option><option value="1">Thorough - 1 km squares, 4x longer</option><option value="3">Quick - 3 km squares, may miss some</option></select>
-        <label for="s-speed">Speed</label><select id="s-speed">
-          <option value="8">Normal</option><option value="4">Gentle - PC stays fast, lower block risk</option><option value="12">Fast - heavy on the PC</option></select>
-      </div>
-      <div class="dim" id="s-estimate" style="margin-top:8px"></div>
-    </div>
-    <div class="actions"><button type="button" id="s-start" class="primary">Start search</button></div>
-    <div id="s-error" class="closed" style="margin-top:8px"></div>
-    <p class="dim" style="margin-top:14px">Keep the Lead Finder window open while it searches. You can close this panel and keep working; new leads appear on their own.
-      Stopping is safe: next time it continues where it left off.</p>`;
-  $('p-close').onclick = closePlace;
-  $('s-cell').value = String(saved.cell || 2);
-  $('s-speed').value = String(saved.concurrency || 8);
+    if (!$('s-keywords').value.trim()) {
+      const defaultKw = (saved.keywords && saved.keywords.length ? saved.keywords : campaignRecommended) || [];
+      $('s-keywords').value = defaultKw.join('\n');
+    }
 
-  const keywordList = () => $('s-keywords').value.split('\n').map(k => k.trim()).filter(Boolean);
-  function describe() {
-    const count = keywordList().length;
-    $('s-count').textContent = `- ${count} type${count === 1 ? '' : 's'}`;
-    if (!bbox) { $('s-size').textContent = 'No area chosen yet.'; $('s-estimate').textContent = ''; return; }
-    const cell = +$('s-cell').value;
-    const heightKm = (bbox[2] - bbox[0]) * KM_PER_DEGREE, widthKm = (bbox[3] - bbox[1]) * KM_PER_DEGREE * Math.cos(bbox[0] * Math.PI / 180);
-    const searches = Math.ceil(heightKm / cell) * Math.ceil(widthKm / cell) * count;
-    // Speed scales with the number of parallel browsers; 25 a minute was measured at "Normal".
-    const hours = searches / (SEARCHES_PER_MINUTE * +$('s-speed').value / 8) / 60;
-    $('s-size').textContent = `Area: about ${Math.round(widthKm)} x ${Math.round(heightKm)} km`;
-    $('s-estimate').textContent = `About ${fmt(searches)} searches - roughly ${hours < 1 ? 'under an hour' : Math.round(hours) + ' hour' + (Math.round(hours) === 1 ? '' : 's')}.`;
+    renderKeywordChips();
+    initCampaignMap();
+    describeCampaign();
+    renderScrapeStatus();
+  } catch (err) {
+    console.error('Failed to load campaign settings:', err);
   }
-  function showArea() {
-    if (!window.L) { $('s-map').style.display = 'none'; return; }
-    if (!areaMap) {
-      areaMap = L.map('s-map');
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'}).addTo(areaMap);
-      areaMap.setView([22.5, 79], 4);
-    }
-    if (rectangle) rectangle.remove();
-    if (bbox) {
-      const bounds = [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
-      rectangle = L.rectangle(bounds, {color: getComputedStyle(document.documentElement).getPropertyValue('--bar').trim(), weight: 2, fillOpacity: .08}).addTo(areaMap);
-      areaMap.fitBounds(bounds, {padding: [12, 12]});
-    }
+}
+
+function getCampaignKeywords() {
+  return $('s-keywords').value.split('\n').map(w => w.trim()).filter(Boolean);
+}
+
+function setCampaignKeywords(words) {
+  $('s-keywords').value = words.join('\n');
+  renderKeywordChips();
+  describeCampaign();
+}
+
+function renderKeywordChips() {
+  const words = getCampaignKeywords();
+  $('s-count').textContent = `${fmt(words.length)} business type${words.length === 1 ? '' : 's'} selected`;
+  const container = $('kw-chips-container');
+  if (!container) return;
+  if (!words.length) {
+    container.innerHTML = '<div class="empty-chips-hint">No business types added yet. Pick a pack above or type a custom business name.</div>';
+    return;
   }
-  async function findArea() {
-    const name = $('s-area').value.trim();
-    if (!name) { $('s-error').textContent = 'Type a city or area name first.'; return; }
-    $('s-error').textContent = '';
-    $('s-size').textContent = 'Looking up the area...';
-    try {
-      const found = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(name))).json();
-      if (!found.length) throw new Error('not found');
-      const [south, north, west, east] = found[0].boundingbox.map(Number);
-      bbox = [south, west, north, east];
-      showArea(); describe();
-    } catch (err) {
-      $('s-size').textContent = '';
-      $('s-error').textContent = 'Could not find that place. Check the spelling and your internet connection.';
-    }
-  }
+  container.innerHTML = words.map(w => `
+    <span class="kw-chip">
+      <span>${esc(w)}</span>
+      <button type="button" class="kw-chip-remove" data-del-kw="${esc(w)}" title="Remove ${esc(w)}">&times;</button>
+    </span>
+  `).join('');
 
-  $('s-find').onclick = findArea;
-  $('s-area').onkeydown = ev => { if (ev.key === 'Enter') findArea(); };
-
-  const addKeywords = wordsToAppend => {
-    const existing = new Set(keywordList().map(w => w.toLowerCase()));
-    const toAdd = [];
-    wordsToAppend.forEach(w => {
-      const clean = w.trim();
-      if (clean && !existing.has(clean.toLowerCase())) {
-        existing.add(clean.toLowerCase());
-        toAdd.push(clean);
-      }
-    });
-    if (toAdd.length > 0) {
-      const cur = $('s-keywords').value.trim();
-      $('s-keywords').value = (cur ? cur + '\n' : '') + toAdd.join('\n');
-      showToast(`Added ${toAdd.length} business type${toAdd.length > 1 ? 's' : ''}`);
-    } else {
-      showToast('All those business types are already in your list');
-    }
-    describe();
-  };
-
-  $('s-kw-add').onclick = () => {
-    const val = $('s-kw-input').value.trim();
-    if (!val) return;
-    addKeywords([val]);
-    $('s-kw-input').value = '';
-    $('s-kw-input').focus();
-  };
-  $('s-kw-input').onkeydown = ev => {
-    if (ev.key === 'Enter') {
-      ev.preventDefault();
-      $('s-kw-add').click();
-    }
-  };
-
-  $('panel').querySelectorAll('button[data-pack]').forEach(btn => {
+  container.querySelectorAll('[data-del-kw]').forEach(btn => {
     btn.onclick = () => {
-      const packName = btn.dataset.pack;
-      const packList = (s.packs && s.packs[packName]) ? s.packs[packName] : [];
-      if (packList.length) addKeywords(packList);
+      const toRemove = btn.dataset.delKw.toLowerCase();
+      const updated = getCampaignKeywords().filter(k => k.toLowerCase() !== toRemove);
+      setCampaignKeywords(updated);
     };
   });
-
-  $('s-recommended').onclick = () => {
-    $('s-keywords').value = (s.recommended || []).join('\n');
-    showToast(`Loaded ${(s.recommended || []).length} recommended types`);
-    describe();
-  };
-
-  $('s-clear-kw').onclick = () => {
-    $('s-keywords').value = '';
-    showToast('Cleared business types');
-    describe();
-  };
-
-  ['s-keywords', 's-cell', 's-speed'].forEach(id => $(id).addEventListener('input', describe));
-  $('s-start').onclick = async () => {
-    $('s-error').textContent = '';
-    const active = scrapeStatus.state === 'running' || scrapeStatus.state === 'waiting';
-    try {
-      if (active) await scrapePost('/scrape/stop');
-      else await scrapePost('/scrape/start', {settings: {area: $('s-area').value.trim(), bbox, keywords: keywordList(), cell: +$('s-cell').value, concurrency: +$('s-speed').value}});
-    } catch (err) { $('s-error').textContent = err.message; }
-  };
-
-  showArea(); describe(); renderScrapeStatus();
-  clearInterval(scrapeTimer);
-  // Faster progress updates while this panel is open.
-  scrapeTimer = setInterval(async () => {
-    if (!$('s-status')) { clearInterval(scrapeTimer); return; }
-    try { const res = await fetch('/scrape.json'); if (res.ok) updateScrapeBar(await res.json()); } catch (err) { /* next tick retries */ }
-  }, SCRAPE_POLL_MS);
 }
+
+function addCampaignKeywords(newWords) {
+  const existing = new Set(getCampaignKeywords().map(w => w.toLowerCase()));
+  const toAdd = [];
+  newWords.forEach(w => {
+    const clean = w.trim();
+    if (clean && !existing.has(clean.toLowerCase())) {
+      existing.add(clean.toLowerCase());
+      toAdd.push(clean);
+    }
+  });
+  if (toAdd.length > 0) {
+    const all = [...getCampaignKeywords(), ...toAdd];
+    setCampaignKeywords(all);
+    showToast(`Added ${toAdd.length} business type${toAdd.length > 1 ? 's' : ''}`);
+  } else {
+    showToast('All those business types are already in your list');
+  }
+}
+
+$('s-kw-add').onclick = () => {
+  const val = $('s-kw-input').value.trim();
+  if (!val) return;
+  addCampaignKeywords([val]);
+  $('s-kw-input').value = '';
+  $('s-kw-input').focus();
+};
+$('s-kw-input').onkeydown = ev => {
+  if (ev.key === 'Enter') {
+    ev.preventDefault();
+    $('s-kw-add').click();
+  }
+};
+
+document.querySelectorAll('#view-campaign button[data-pack]').forEach(btn => {
+  btn.onclick = () => {
+    const pack = btn.dataset.pack;
+    const list = campaignPacks[pack] || [];
+    if (list.length) addCampaignKeywords(list);
+  };
+});
+
+$('s-recommended').onclick = () => {
+  if (campaignRecommended && campaignRecommended.length) {
+    setCampaignKeywords(campaignRecommended);
+    showToast(`Loaded ${campaignRecommended.length} curated business types`);
+  }
+};
+
+$('s-clear-kw').onclick = () => {
+  setCampaignKeywords([]);
+  showToast('Cleared all business types');
+};
+
+$('btn-kw-chips').onclick = () => {
+  $('btn-kw-chips').classList.add('active');
+  $('btn-kw-raw').classList.remove('active');
+  $('kw-chips-container').hidden = false;
+  $('s-keywords').hidden = true;
+  renderKeywordChips();
+};
+$('btn-kw-raw').onclick = () => {
+  $('btn-kw-raw').classList.add('active');
+  $('btn-kw-chips').classList.remove('active');
+  $('kw-chips-container').hidden = true;
+  $('s-keywords').hidden = false;
+};
+$('s-keywords').addEventListener('input', () => {
+  renderKeywordChips();
+  describeCampaign();
+});
+['s-cell', 's-speed'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('change', describeCampaign);
+});
+
+function initCampaignMap() {
+  if (!window.L || !$('s-map')) return;
+  if (!campaignMap) {
+    campaignMap = L.map('s-map');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(campaignMap);
+    campaignMap.setView([22.5, 79], 4);
+  }
+  if (campaignRectangle) campaignRectangle.remove();
+  if (campaignBbox) {
+    const bounds = [[campaignBbox[0], campaignBbox[1]], [campaignBbox[2], campaignBbox[3]]];
+    campaignRectangle = L.rectangle(bounds, {
+      color: getComputedStyle(document.documentElement).getPropertyValue('--bar').trim(),
+      weight: 2,
+      fillOpacity: 0.08
+    }).addTo(campaignMap);
+    campaignMap.fitBounds(bounds, {padding: [16, 16]});
+  }
+  campaignMap.invalidateSize();
+}
+
+async function findCampaignArea() {
+  const name = $('s-area').value.trim();
+  if (!name) {
+    $('s-error').textContent = 'Please type a city or area name first.';
+    return;
+  }
+  $('s-error').textContent = '';
+  $('s-size').textContent = 'Looking up location...';
+  try {
+    const found = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(name))).json();
+    if (!found.length) throw new Error('not found');
+    const [south, north, west, east] = found[0].boundingbox.map(Number);
+    campaignBbox = [south, west, north, east];
+    initCampaignMap();
+    describeCampaign();
+  } catch (err) {
+    $('s-size').textContent = '';
+    $('s-error').textContent = 'Could not find that location. Check spelling and internet connection.';
+  }
+}
+
+$('s-find').onclick = findCampaignArea;
+$('s-area').onkeydown = ev => { if (ev.key === 'Enter') findCampaignArea(); };
+
+function describeCampaign() {
+  const count = getCampaignKeywords().length;
+  $('s-count').textContent = `${fmt(count)} business type${count === 1 ? '' : 's'} selected`;
+  if (!campaignBbox) {
+    $('s-size').textContent = 'No area chosen yet.';
+    $('s-estimate').textContent = 'Choose an area and keywords to see search estimates.';
+    return;
+  }
+  const cell = +$('s-cell').value;
+  const heightKm = (campaignBbox[2] - campaignBbox[0]) * KM_PER_DEGREE;
+  const widthKm = (campaignBbox[3] - campaignBbox[1]) * KM_PER_DEGREE * Math.cos(campaignBbox[0] * Math.PI / 180);
+  const searches = Math.ceil(heightKm / cell) * Math.ceil(widthKm / cell) * count;
+  const speed = +$('s-speed').value;
+  const hours = searches / (SEARCHES_PER_MINUTE * speed / 8) / 60;
+  $('s-size').textContent = `Target Area: about ${Math.round(widthKm)} × ${Math.round(heightKm)} km`;
+  $('s-estimate').innerHTML = `
+    <b>Search Estimate:</b> ~${fmt(searches)} searches across ${Math.ceil(heightKm / cell) * Math.ceil(widthKm / cell)} grid squares.<br>
+    Estimated time: <b>${hours < 1 ? 'under an hour' : Math.round(hours) + ' hour' + (Math.round(hours) === 1 ? '' : 's')}</b> at current speed.
+  `;
+}
+
+$('s-start-main').onclick = async () => {
+  $('s-error').textContent = '';
+  const active = scrapeStatus && (scrapeStatus.state === 'running' || scrapeStatus.state === 'waiting');
+  try {
+    if (active) {
+      await scrapePost('/scrape/stop');
+      showToast('Search stopped');
+    } else {
+      const area = $('s-area').value.trim();
+      const keywords = getCampaignKeywords();
+      if (!area) {
+        $('s-error').textContent = 'Please enter a target city or area first.';
+        return;
+      }
+      if (!keywords.length) {
+        $('s-error').textContent = 'Please select at least one business keyword or category pack.';
+        return;
+      }
+      await scrapePost('/scrape/start', {
+        settings: {
+          area,
+          bbox: campaignBbox,
+          keywords,
+          cell: +$('s-cell').value,
+          concurrency: +$('s-speed').value
+        }
+      });
+      showToast('Search campaign started!');
+    }
+  } catch (err) {
+    $('s-error').textContent = err.message;
+  }
+};
+
+// Continuous scrape status polling
+setInterval(async () => {
+  try {
+    const res = await fetch('/scrape.json');
+    if (res.ok) updateScrapeBar(await res.json());
+  } catch (err) {}
+}, SCRAPE_POLL_MS);
+
+// Initialize view routing based on hash or if user has 0 leads
+if (window.location.hash === '#campaign') {
+  switchView('campaign');
+} else {
+  loadCampaignSettings();
+}
+
 $('add-place').onclick = () => showEditForm(null, null);
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-open]');

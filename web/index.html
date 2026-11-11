@@ -8,125 +8,247 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<main>
-<h1>Lead Finder</h1>
-<div class="sub"><span id="total"></span> &middot; <span id="live">loading...</span></div>
-
-<div class="card scrape-bar">
-  <div id="scrape-text">Checking search status...</div>
-  <div class="actions-row">
-    <button type="button" id="scrape-stop" hidden>Stop search</button>
-    <button type="button" id="scrape-continue" hidden>Continue search</button>
-    <button type="button" id="scrape-open" class="primary">Find businesses</button>
-  </div>
-</div>
-
-<div class="filters card">
-  <div class="search-box">
-    <input id="f-q" type="search" placeholder="Search name, type, service, address">
-    <button type="button" id="f-q-clear" class="search-clear" title="Clear search">&times;</button>
-  </div>
-  <select id="f-cat" aria-label="Category"></select>
-  <select id="f-loc" aria-label="Locality"></select>
-  <select class="adv" id="f-pin" aria-label="Pincode"></select>
-  <select class="adv" id="f-web" aria-label="Website">
-    <option value="">Website: any</option><option value="o">Own website</option>
-    <option value="s">Social / listing link only</option><option value="n">No website</option>
-    <option value="sn">No own website</option>
-  </select>
-  <select id="f-phone" aria-label="Phone">
-    <option value="">Phone: any</option><option value="y">Has phone</option><option value="m">Mobile</option>
-    <option value="l">Landline</option><option value="x">No phone</option>
-  </select>
-  <select class="adv" id="f-rating" aria-label="Rating">
-    <option value="">Rating: any</option><option value="4.5">4.5 and up</option><option value="4">4.0 and up</option>
-    <option value="3.5">3.5 and up</option><option value="low">Below 3.5</option><option value="none">Unrated</option>
-  </select>
-  <select class="adv" id="f-rev" aria-label="Reviews">
-    <option value="0">Reviews: any</option><option value="10">10+</option><option value="50">50+</option>
-    <option value="100">100+</option><option value="500">500+</option>
-  </select>
-  <select id="f-score" aria-label="Lead score">
-    <option value="0">Lead score: any</option><option value="80">80+</option><option value="70">70+</option>
-    <option value="50">50+</option>
-  </select>
-  <select class="adv" id="f-hours" aria-label="Opening hours">
-    <option value="">Hours: any</option><option value="now">Open now</option><option value="sun">Open on Sunday</option>
-    <option value="24">Open 24 hours</option><option value="none">Hours not listed</option>
-  </select>
-  <select class="adv" id="f-active" aria-label="Recent activity">
-    <option value="">Activity: any</option><option value="recent">Reviewed in last 3 months</option>
-    <option value="year">Reviewed in last 12 months</option><option value="stale">No review for over a year</option>
-  </select>
-  <select class="adv" id="f-neg" aria-label="Unhappy customers">
-    <option value="0">Low ratings: any</option><option value="20">20%+ are 1-2 star</option>
-    <option value="40">40%+ are 1-2 star</option>
-  </select>
-  <select class="adv" id="f-claim" aria-label="Claimed">
-    <option value="">Listing: any</option><option value="1">Claimed by owner</option><option value="0">Unclaimed</option>
-  </select>
-  <select class="adv" id="f-closed" aria-label="Closed businesses">
-    <option value="">Hide closed</option><option value="all">Include closed</option><option value="only">Closed only</option>
-  </select>
-  <select class="adv" id="f-fit" aria-label="Business fit">
-    <option value="">Good fit only</option><option value="all">Include low fit</option><option value="low">Low fit only</option>
-  </select>
-  <select id="f-lead" aria-label="Lead status"></select>
-  <button type="button" id="more">More filters</button>
-  <button type="button" id="reset">Reset</button>
-  <button type="button" id="add-place">+ Add business</button>
-  <button type="button" id="insights">Show insights</button>
-</div>
-
-<div class="presets">
-  <span>Quick views:</span>
-  <button type="button" data-preset="best">Best leads (score 70+)</button>
-  <button type="button" data-preset="noweb-mobile">No website + mobile number</button>
-  <button type="button" class="adv" data-preset="popular-noweb">Popular (50+ reviews), no own website</button>
-  <button type="button" class="adv" data-preset="low-rated">Low rated, 10+ reviews</button>
-  <button type="button" class="adv" data-preset="unclaimed">Unclaimed listings</button>
-  <button type="button" data-preset="open-now">Open now with phone</button>
-  <button type="button" class="adv" data-preset="active">Reviewed in last 3 months</button>
-  <button type="button" class="adv" data-preset="unhappy">Many unhappy customers</button>
-  <button type="button" data-preset="followup">My interested leads</button>
-</div>
-
-<div class="tiles" id="tiles"></div>
-
-<div class="grid ins">
-  <div class="card"><h2>Top categories</h2><div class="bars" id="c-cat"></div></div>
-  <div class="card"><h2>Top localities</h2><div class="bars" id="c-loc"></div></div>
-  <div class="card"><h2>Rating spread</h2><div class="bars" id="c-rating"></div>
-    <h2 class="section-title">Online presence</h2><div class="bars" id="c-web"></div></div>
-  <div class="card"><h2>Lead score spread</h2><div class="bars" id="c-score"></div>
-    <h2 class="section-title">Lead status</h2><div class="bars" id="c-lead"></div></div>
-</div>
-
-<div class="card ins mb-12">
-  <h2>Category breakdown <span class="dim">- click a row to filter</span></h2>
-  <div class="scroll"><table id="t-cat"></table></div>
-</div>
-
-<div class="card ins mb-12" id="map-card">
-  <h2>Map <span class="dim" id="map-note"></span></h2>
-  <div id="map"></div>
-</div>
-
-<div class="card">
-  <div class="bar-top">
+<header class="app-header">
+  <div class="header-inner">
     <div>
-      <h2 class="places-heading">Places <span class="dim" id="count"></span></h2>
-      <span class="dim places-subtitle">- click a row for full details</span>
+      <h1 class="brand-title">Lead Finder</h1>
+      <div class="sub"><span id="total"></span> &middot; <span id="live">loading...</span></div>
     </div>
-    <div class="pager" id="pager-top"></div>
+    <nav class="nav-tabs" aria-label="Views">
+      <button type="button" class="tab-btn active" id="tab-leads">📋 Leads &amp; CRM <span class="tab-badge" id="leads-badge">0</span></button>
+      <button type="button" class="tab-btn" id="tab-campaign">🎯 Target &amp; Scrape</button>
+    </nav>
   </div>
-  <div class="scroll"><table id="t-places"></table></div>
-  <div class="bar-bottom">
-    <div class="dim" id="showing-range"></div>
-    <div class="pager" id="pager-bottom"></div>
+</header>
+
+<main>
+  <!-- Global Active Scrape Bar -->
+  <div class="card scrape-bar" id="global-scrape-bar">
+    <div id="scrape-text">Checking search status...</div>
+    <div class="actions-row">
+      <button type="button" id="scrape-stop" hidden>Stop search</button>
+      <button type="button" id="scrape-continue" hidden>Continue search</button>
+      <button type="button" id="scrape-open" class="primary">Manage search</button>
+    </div>
   </div>
-</div>
-<div id="toast" class="toast"></div>
+
+  <!-- VIEW 1: TARGET & SCRAPE CAMPAIGN BUILDER -->
+  <section id="view-campaign" class="view-panel" hidden>
+    <div class="campaign-header">
+      <div>
+        <h2>Target Businesses &amp; Search Campaign</h2>
+        <p class="dim">Configure where to search, pick your target business categories or custom keywords, and start discovering leads.</p>
+      </div>
+      <div class="campaign-actions">
+        <button type="button" class="primary campaign-launch-btn" id="s-start-main">Start Search</button>
+        <button type="button" id="s-view-leads-btn">View Scraped Leads &rarr;</button>
+      </div>
+    </div>
+
+    <div id="s-main-status" class="card mb-12"></div>
+
+    <div class="campaign-grid">
+      <!-- Left Column: Location & Settings -->
+      <div class="campaign-col">
+        <div class="card mb-12">
+          <h3>1. Target Location</h3>
+          <p class="dim">Enter any city, town, district, or neighborhood to search.</p>
+          <div class="location-search-row">
+            <input id="s-area" type="text" placeholder="City or area (e.g. Jodhpur, Jaipur, South Delhi)" class="flex-1">
+            <button type="button" id="s-find" class="primary">Find on map</button>
+          </div>
+          <div id="s-map" class="campaign-map"></div>
+          <div class="dim mt-8" id="s-size">No area chosen yet.</div>
+          <div id="s-error" class="closed mt-8"></div>
+        </div>
+
+        <div class="card mb-12">
+          <h3>3. Search Resolution &amp; Speed</h3>
+          <div class="form-grid">
+            <label for="s-cell">Grid Detail</label>
+            <select id="s-cell">
+              <option value="2">Standard - 2 km squares (Recommended)</option>
+              <option value="1">Thorough - 1 km squares (Deep search, 4x longer)</option>
+              <option value="3">Quick - 3 km squares (Fast broad scan)</option>
+            </select>
+
+            <label for="s-speed">Scraper Speed</label>
+            <select id="s-speed">
+              <option value="8">Normal (8 parallel browsers)</option>
+              <option value="4">Gentle (4 browsers - lower PC load)</option>
+              <option value="12">Fast (12 browsers - high speed)</option>
+              <option value="16">Maximum (16 browsers)</option>
+            </select>
+          </div>
+          <div class="estimate-box mt-8">
+            <div class="dim" id="s-estimate">Choose an area and keywords to see search estimates.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Keywords & Business Targets -->
+      <div class="campaign-col">
+        <div class="card mb-12">
+          <div class="kw-header-row">
+            <div>
+              <h3 class="m-0">2. Target Businesses &amp; Keywords</h3>
+              <div class="dim" id="s-count">0 business types selected</div>
+            </div>
+            <div class="kw-quick-tools">
+              <button type="button" class="btn-pack" id="s-recommended" title="Load all 200+ curated keywords">All 200+ Curated</button>
+              <button type="button" class="btn-pack crit" id="s-clear-kw">Clear All</button>
+            </div>
+          </div>
+
+          <p class="dim mt-8">Select one or more curated industry packs, or add custom business types below:</p>
+
+          <div class="pack-buttons-container">
+            <button type="button" class="btn-pack" data-pack="high_value" title="Gyms, salons, dental, clinics, coaching, restaurants">+ High Value</button>
+            <button type="button" class="btn-pack" data-pack="healthcare" title="Dental, doctors, hospitals, pathology, labs">+ Healthcare</button>
+            <button type="button" class="btn-pack" data-pack="education" title="Coaching, institutes, tuition, schools">+ Education</button>
+            <button type="button" class="btn-pack" data-pack="food_hospitality" title="Restaurants, cafes, hotels, banquet">+ Dining</button>
+            <button type="button" class="btn-pack" data-pack="real_estate_home" title="Real estate, builders, interior, home services">+ Real Estate</button>
+            <button type="button" class="btn-pack" data-pack="services_business" title="CA, tax, legal, marketing, logistics">+ Business Services</button>
+            <button type="button" class="btn-pack" data-pack="retail_showrooms" title="Jewellery, clothing, mobile, electronics">+ Retail</button>
+          </div>
+
+          <div class="custom-kw-bar mt-12">
+            <input id="s-kw-input" type="text" placeholder="Add custom type (e.g. gym, salon, clinic, architect)..." class="flex-1">
+            <button type="button" id="s-kw-add" class="primary">+ Add Type</button>
+          </div>
+
+          <div class="kw-editor-section mt-12">
+            <div class="kw-mode-toggle">
+              <span class="dim">Keywords Editor:</span>
+              <button type="button" class="text-btn active" id="btn-kw-chips">Visual Chips</button>
+              <button type="button" class="text-btn" id="btn-kw-raw">Raw Text / Paste</button>
+            </div>
+
+            <div id="kw-chips-container" class="kw-chips-box"></div>
+            <textarea id="s-keywords" spellcheck="false" rows="8" placeholder="One business type per line..." hidden></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 2: LEADS CRM & ANALYTICS -->
+  <section id="view-leads" class="view-panel">
+    <!-- Empty state banner when 0 leads exist -->
+    <div id="leads-empty-hero" class="card empty-hero" hidden>
+      <h2>👋 Welcome to Lead Finder!</h2>
+      <p>You haven't scraped any leads yet. Set up your target location and business keywords to start finding prospects.</p>
+      <button type="button" class="primary btn-large" id="btn-first-campaign">🎯 Set Up Target Search</button>
+    </div>
+
+    <div class="filters card">
+      <div class="search-box">
+        <input id="f-q" type="search" placeholder="Search name, type, service, address">
+        <button type="button" id="f-q-clear" class="search-clear" title="Clear search">&times;</button>
+      </div>
+      <select id="f-cat" aria-label="Category"></select>
+      <select id="f-loc" aria-label="Locality"></select>
+      <select class="adv" id="f-pin" aria-label="Pincode"></select>
+      <select class="adv" id="f-web" aria-label="Website">
+        <option value="">Website: any</option><option value="o">Own website</option>
+        <option value="s">Social / listing link only</option><option value="n">No website</option>
+        <option value="sn">No own website</option>
+      </select>
+      <select id="f-phone" aria-label="Phone">
+        <option value="">Phone: any</option><option value="y">Has phone</option><option value="m">Mobile</option>
+        <option value="l">Landline</option><option value="x">No phone</option>
+      </select>
+      <select class="adv" id="f-rating" aria-label="Rating">
+        <option value="">Rating: any</option><option value="4.5">4.5 and up</option><option value="4">4.0 and up</option>
+        <option value="3.5">3.5 and up</option><option value="low">Below 3.5</option><option value="none">Unrated</option>
+      </select>
+      <select class="adv" id="f-rev" aria-label="Reviews">
+        <option value="0">Reviews: any</option><option value="10">10+</option><option value="50">50+</option>
+        <option value="100">100+</option><option value="500">500+</option>
+      </select>
+      <select id="f-score" aria-label="Lead score">
+        <option value="0">Lead score: any</option><option value="80">80+</option><option value="70">70+</option>
+        <option value="50">50+</option>
+      </select>
+      <select class="adv" id="f-hours" aria-label="Opening hours">
+        <option value="">Hours: any</option><option value="now">Open now</option><option value="sun">Open on Sunday</option>
+        <option value="24">Open 24 hours</option><option value="none">Hours not listed</option>
+      </select>
+      <select class="adv" id="f-active" aria-label="Recent activity">
+        <option value="">Activity: any</option><option value="recent">Reviewed in last 3 months</option>
+        <option value="year">Reviewed in last 12 months</option><option value="stale">No review for over a year</option>
+      </select>
+      <select class="adv" id="f-neg" aria-label="Unhappy customers">
+        <option value="0">Low ratings: any</option><option value="20">20%+ are 1-2 star</option>
+        <option value="40">40%+ are 1-2 star</option>
+      </select>
+      <select class="adv" id="f-claim" aria-label="Claimed">
+        <option value="">Listing: any</option><option value="1">Claimed by owner</option><option value="0">Unclaimed</option>
+      </select>
+      <select class="adv" id="f-closed" aria-label="Closed businesses">
+        <option value="">Hide closed</option><option value="all">Include closed</option><option value="only">Closed only</option>
+      </select>
+      <select class="adv" id="f-fit" aria-label="Business fit">
+        <option value="">Good fit only</option><option value="all">Include low fit</option><option value="low">Low fit only</option>
+      </select>
+      <select id="f-lead" aria-label="Lead status"></select>
+      <button type="button" id="more">More filters</button>
+      <button type="button" id="reset">Reset</button>
+      <button type="button" id="add-place">+ Add business</button>
+      <button type="button" id="insights">Show insights</button>
+    </div>
+
+    <div class="presets">
+      <span>Quick views:</span>
+      <button type="button" data-preset="best">Best leads (score 70+)</button>
+      <button type="button" data-preset="noweb-mobile">No website + mobile number</button>
+      <button type="button" class="adv" data-preset="popular-noweb">Popular (50+ reviews), no own website</button>
+      <button type="button" class="adv" data-preset="low-rated">Low rated, 10+ reviews</button>
+      <button type="button" class="adv" data-preset="unclaimed">Unclaimed listings</button>
+      <button type="button" data-preset="open-now">Open now with phone</button>
+      <button type="button" class="adv" data-preset="active">Reviewed in last 3 months</button>
+      <button type="button" class="adv" data-preset="unhappy">Many unhappy customers</button>
+      <button type="button" data-preset="followup">My interested leads</button>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="grid ins">
+      <div class="card"><h2>Top categories</h2><div class="bars" id="c-cat"></div></div>
+      <div class="card"><h2>Top localities</h2><div class="bars" id="c-loc"></div></div>
+      <div class="card"><h2>Rating spread</h2><div class="bars" id="c-rating"></div>
+        <h2 class="section-title">Online presence</h2><div class="bars" id="c-web"></div></div>
+      <div class="card"><h2>Lead score spread</h2><div class="bars" id="c-score"></div>
+        <h2 class="section-title">Lead status</h2><div class="bars" id="c-lead"></div></div>
+    </div>
+
+    <div class="card ins mb-12">
+      <h2>Category breakdown <span class="dim">- click a row to filter</span></h2>
+      <div class="scroll"><table id="t-cat"></table></div>
+    </div>
+
+    <div class="card ins mb-12" id="map-card">
+      <h2>Map <span class="dim" id="map-note"></span></h2>
+      <div id="map"></div>
+    </div>
+
+    <div class="card">
+      <div class="bar-top">
+        <div>
+          <h2 class="places-heading">Places <span class="dim" id="count"></span></h2>
+          <span class="dim places-subtitle">- click a row for full details</span>
+        </div>
+        <div class="pager" id="pager-top"></div>
+      </div>
+      <div class="scroll"><table id="t-places"></table></div>
+      <div class="bar-bottom">
+        <div class="dim" id="showing-range"></div>
+        <div class="pager" id="pager-bottom"></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast"></div>
 </main>
 
 <aside id="panel" aria-label="Place details"></aside>
