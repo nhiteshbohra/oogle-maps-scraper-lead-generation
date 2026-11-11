@@ -67,6 +67,23 @@
             <input id="s-area" type="text" placeholder="City or area (e.g. Jodhpur, Jaipur, South Delhi)" class="flex-1">
             <button type="button" id="s-find" class="primary">Find on map</button>
           </div>
+          <div class="scope-row mt-8">
+            <span class="dim">Area Scope:</span>
+            <div class="scope-presets">
+              <button type="button" class="btn-pack active" id="scope-core" data-pad="0">📍 City Core (~15 km)</button>
+              <button type="button" class="btn-pack" id="scope-suburbs" data-pad="12">🌆 Greater &amp; Suburbs (+12 km)</button>
+              <button type="button" class="btn-pack" id="scope-district" data-pad="30">🗺️ Full District (+30 km)</button>
+            </div>
+          </div>
+          <div class="scope-adjust-row mt-8">
+            <span class="dim">Padding:</span>
+            <button type="button" class="btn-pack" id="btn-pad-sub-10">-10 km</button>
+            <button type="button" class="btn-pack" id="btn-pad-sub-5">-5 km</button>
+            <button type="button" class="btn-pack" id="btn-pad-add-5">+5 km</button>
+            <button type="button" class="btn-pack" id="btn-pad-add-10">+10 km</button>
+            <button type="button" class="btn-pack" id="btn-pad-add-25">+25 km</button>
+            <span class="dim" id="current-padding-label">(City core)</span>
+          </div>
           <div id="s-map" class="campaign-map"></div>
           <div class="dim mt-8" id="s-size">No area chosen yet.</div>
           <div id="s-error" class="closed mt-8"></div>
@@ -114,6 +131,8 @@
               <div class="dim" id="s-count">0 business types selected</div>
             </div>
             <div class="kw-quick-tools">
+              <button type="button" class="btn-pack primary" id="btn-browse-categories">📖 All Google Categories</button>
+              <button type="button" class="btn-pack" id="btn-save-custom-pack">+ Save As My Pack</button>
               <button type="button" class="btn-pack" id="s-recommended" title="Load all 200+ curated keywords">All 200+ Curated</button>
               <button type="button" class="btn-pack crit" id="s-clear-kw">Clear All</button>
             </div>
@@ -130,6 +149,7 @@
             <button type="button" class="btn-pack" data-pack="services_business" title="CA, tax, legal, marketing, logistics">+ Business Services</button>
             <button type="button" class="btn-pack" data-pack="retail_showrooms" title="Jewellery, clothing, mobile, electronics">+ Retail</button>
           </div>
+          <div id="custom-packs-container" class="pack-buttons-container mt-8" hidden></div>
 
           <div class="custom-kw-bar mt-12">
             <input id="s-kw-input" type="text" placeholder="Add custom type (e.g. gym, salon, clinic, architect)..." class="flex-1">
@@ -262,6 +282,23 @@
         </div>
         <div class="pager" id="pager-top"></div>
       </div>
+      <div id="bulk-toolbar" class="bulk-bar" hidden>
+        <div class="bulk-info"><span id="bulk-count">0</span> leads selected</div>
+        <div class="bulk-actions">
+          <label for="bulk-status-select" class="dim">Mark status:</label>
+          <select id="bulk-status-select">
+            <option value="">Set lead status...</option>
+            <option value="new">New</option>
+            <option value="called">Called</option>
+            <option value="interested">Interested</option>
+            <option value="rejected">Rejected</option>
+            <option value="customer">Customer</option>
+          </select>
+          <button type="button" id="btn-bulk-hide" class="crit">Hide Selected</button>
+          <button type="button" id="btn-bulk-export">Export Selected</button>
+          <button type="button" id="btn-bulk-clear" class="text-btn">Clear</button>
+        </div>
+      </div>
       <div class="scroll"><table id="t-places"></table></div>
       <div class="bar-bottom">
         <div class="dim" id="showing-range"></div>
@@ -269,6 +306,39 @@
       </div>
     </div>
   </section>
+
+  <div id="modal-categories" class="modal-backdrop" hidden>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="m-0">Google Maps Official Categories Directory</h2>
+          <div class="dim">Browse or search 500+ official categories across 12 industries. Select what you want to target.</div>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-cat-modal" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="modal-toolbar">
+        <div class="search-box flex-1">
+          <input type="search" id="cat-modal-search" placeholder="Search categories (e.g. clinic, dentist, lawyer, cafe, school, contractor)...">
+          <button type="button" id="cat-modal-clear" class="search-clear" title="Clear">&times;</button>
+        </div>
+        <button type="button" class="btn-pack" id="btn-cat-select-all">Select All Matching</button>
+        <button type="button" class="btn-pack" id="btn-cat-deselect-all">Deselect All</button>
+      </div>
+
+      <div class="cat-industry-tabs" id="cat-industry-tabs"></div>
+
+      <div class="cat-list-container" id="cat-list-container"></div>
+
+      <div class="modal-footer">
+        <div class="dim" id="cat-modal-selection-count">0 categories selected</div>
+        <div class="actions">
+          <button type="button" class="text-btn" id="btn-cancel-cat-modal">Cancel</button>
+          <button type="button" class="primary" id="btn-apply-categories">Apply Selected to Search</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="toast" class="toast"></div>
 </main>

@@ -25,8 +25,8 @@ MAX_KEYWORDS = 500
 MAX_KEYWORD_LENGTH = 80
 CELL_KM_CHOICES = (1, 2, 3)
 CONCURRENCY_RANGE = (1, 16)
-# Largest search area accepted, in degrees per side (~55 km): bigger is almost surely a mistake.
-MAX_BBOX_DEGREES = 0.5
+# Largest search area accepted, in degrees per side (~165 km): allows full districts, suburbs and metro regions.
+MAX_BBOX_DEGREES = 1.5
 
 # Windows: keep the PC awake while a scrape runs (ES_CONTINUOUS | ES_SYSTEM_REQUIRED).
 KEEP_AWAKE = 0x80000001
@@ -214,7 +214,7 @@ def clean_settings(raw):
     if not (-90 <= south < north <= 90 and -180 <= west < east <= 180):
         raise ValueError("The area is not a valid rectangle")
     if north - south > MAX_BBOX_DEGREES or east - west > MAX_BBOX_DEGREES:
-        raise ValueError("The area is too large - pick one city, not a whole region")
+        raise ValueError("The area is too large - pick an area under 165 km across")
 
     keywords = []
     for word in raw.get("keywords") or []:

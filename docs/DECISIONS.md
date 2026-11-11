@@ -91,3 +91,7 @@ Append-only record of design decisions. If a decision is reversed, a new entry i
 - **Decision**: Add full lead exclusion/hiding (tracked in `.edits.json` and filtered client-side with restoration support), safe database reset with automatic timestamped directory backups, and real-time scraper log streaming via `/scrape.json` inside the web interface.
 - **Why**: Eliminates the remaining manual tasks that previously required opening Windows File Explorer or checking terminal windows, allowing the user to manage the complete lead lifecycle directly through the browser.
 
+## ADR-022 (2026-11-11): Area Scope Expander and Full Google Maps Category Directory
+- **Decision**: Add Area Scope presets (`City Core`, `Greater & Suburbs`, `Full District`) with fine-tuning padding buttons (`+/- 5, 10, 25 km`), expand `MAX_BBOX_DEGREES` limit to 1.5 (~165 km), and embed a comprehensive, searchable catalog of 500+ official Google Maps categories across 12 primary industries with multi-select capability into the web UI.
+- **Why**: Resolves geographic under-coverage where municipal geocoding only captured the ~14x16 km downtown area and missed outer suburbs, tehsils, and industrial zones (such as greater Jodhpur). Empowers users to browse and select from the full official Google Maps category ontology directly in the browser.
+

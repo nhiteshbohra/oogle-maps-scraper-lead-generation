@@ -396,6 +396,7 @@ function renderCategoryTable() {
   $('t-cat').querySelectorAll('tr.click').forEach(el => el.onclick = () => { $('f-cat').value = el.dataset.v; applyFilters(); });
 }
 
+let selectedLeadKeys = new Set();
 const COLS = [['Name and address', 0], ['What they do', 1], ['Locality', 2], ['Phone', 5], ['Website', 8], ['Rating', 10, 1], ['Reviews', 11, 1], ['Score', 20, 1], ['Lead', -1]];
 
 const waLink = r => r[6] === 'm' ? `https://wa.me/${r[5].replace(/\D/g, '')}` : '';
@@ -413,7 +414,8 @@ function renderPlaces() {
   const endIdx = PAGE_SIZE === -1 ? sorted.length : Math.min(startIdx + pageSize, sorted.length);
   const visibleRows = sorted.slice(startIdx, endIdx);
 
-  const head = '<tr>' + COLS.map(([name, idx, num]) => idx < 0 ? `<th>${name}</th>` :
+  const allSelected = visibleRows.length > 0 && visibleRows.every(r => selectedLeadKeys.has(r[23]));
+  const head = '<tr><th class="select-col"><input type="checkbox" id="select-all-places" title="Select all visible places" ' + (allSelected ? 'checked' : '') + '></th>' + COLS.map(([name, idx, num]) => idx < 0 ? `<th>${name}</th>` :
     `<th class="sort${num ? ' num' : ''}" data-i="${idx}">${name}${sortCol === idx ? (sortDir > 0 ? ' &#9650;' : ' &#9660;') : ''}</th>`).join('') + '</tr>';
   const body = visibleRows.map(r => {
     const open = openNow(r), status = leadStatus(r);
@@ -422,7 +424,11 @@ function renderPlaces() {
     const leadOpts = Object.keys(LEAD_NAMES).map(k =>
       `<option value="${k}"${status === k ? ' selected' : ''}>${LEAD_NAMES[k]}</option>`
     ).join('');
+    const isChecked = selectedLeadKeys.has(r[23]);
     return `<tr class="click" data-key="${esc(r[23])}">
+      <td class="select-col" onclick="event.stopPropagation()">
+        <input type="checkbox" class="row-checkbox" data-chk-key="${esc(r[23])}" ${isChecked ? 'checked' : ''}>
+      </td>
       <td>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">
           <b>${esc(r[0])}</b>
@@ -462,7 +468,28 @@ function renderPlaces() {
       </td>
     </tr>`;
   }).join('');
-  $('t-places').innerHTML = head + (body || '<tr><td colspan="9" class="empty">No places match these filters</td></tr>');
+  $('t-places').innerHTML = head + (body || '<tr><td colspan="10" class="empty">No places match these filters</td></tr>');
+
+  const selectAll = $('select-all-places');
+  if (selectAll) {
+    selectAll.onchange = () => {
+      visibleRows.forEach(r => {
+        if (selectAll.checked) selectedLeadKeys.add(r[23]);
+        else selectedLeadKeys.delete(r[23]);
+      });
+      renderPlaces();
+      updateBulkToolbar();
+    };
+  }
+
+  $('t-places').querySelectorAll('.row-checkbox').forEach(cb => {
+    cb.onchange = () => {
+      const k = cb.dataset.chkKey;
+      if (cb.checked) selectedLeadKeys.add(k);
+      else selectedLeadKeys.delete(k);
+      updateBulkToolbar();
+    };
+  });
   $('t-places').querySelectorAll('th.sort').forEach(th => th.onclick = () => {
     const i = +th.dataset.i;
     if (sortCol === i) sortDir = -sortDir; else { sortCol = i; sortDir = NUMERIC_COLS.includes(i) ? -1 : 1; }
@@ -970,7 +997,9 @@ async function loadCampaignSettings() {
       $('s-keywords').value = defaultKw.join('\n');
     }
 
+    if (campaignBbox && !rawBbox) rawBbox = [...campaignBbox];
     renderKeywordChips();
+    loadCustomPacks();
     initCampaignMap();
     describeCampaign();
     renderScrapeStatus();
@@ -1158,6 +1187,31 @@ function initCampaignMap() {
   campaignMap.invalidateSize();
 }
 
+let rawBbox = null;
+let currentPaddingKm = 0;
+
+function applyAreaPadding(padKm) {
+  currentPaddingKm = Math.max(0, padKm);
+  if (!rawBbox) return;
+  const avgLat = (rawBbox[0] + rawBbox[2]) / 2;
+  const latPad = currentPaddingKm / KM_PER_DEGREE;
+  const lonPad = currentPaddingKm / (KM_PER_DEGREE * Math.cos(avgLat * Math.PI / 180));
+  campaignBbox = [
+    rawBbox[0] - latPad,
+    rawBbox[1] - lonPad,
+    rawBbox[2] + latPad,
+    rawBbox[3] + lonPad
+  ];
+  if ($('current-padding-label')) {
+    $('current-padding-label').textContent = currentPaddingKm > 0 ? `(+${currentPaddingKm} km padding)` : '(City core)';
+  }
+  document.querySelectorAll('#view-campaign [data-pad]').forEach(btn => {
+    btn.classList.toggle('active', +btn.dataset.pad === currentPaddingKm);
+  });
+  initCampaignMap();
+  describeCampaign();
+}
+
 async function findCampaignArea() {
   const name = $('s-area').value.trim();
   if (!name) {
@@ -1170,9 +1224,9 @@ async function findCampaignArea() {
     const found = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(name))).json();
     if (!found.length) throw new Error('not found');
     const [south, north, west, east] = found[0].boundingbox.map(Number);
-    campaignBbox = [south, west, north, east];
-    initCampaignMap();
-    describeCampaign();
+    rawBbox = [south, west, north, east];
+    currentPaddingKm = 0;
+    applyAreaPadding(0);
   } catch (err) {
     $('s-size').textContent = '';
     $('s-error').textContent = 'Could not find that location. Check spelling and internet connection.';
@@ -1250,6 +1304,321 @@ if (window.location.hash === '#campaign') {
   switchView('campaign');
 } else {
   loadCampaignSettings();
+}
+
+
+// ---- Bulk Lead Actions ----
+function updateBulkToolbar() {
+  const bar = $('bulk-toolbar');
+  if (!bar) return;
+  const count = selectedLeadKeys.size;
+  bar.hidden = count === 0;
+  if ($('bulk-count')) $('bulk-count').textContent = fmt(count);
+}
+
+if ($('bulk-status-select')) {
+  $('bulk-status-select').onchange = async () => {
+    const status = $('bulk-status-select').value;
+    if (!status || selectedLeadKeys.size === 0) return;
+    const keys = [...selectedLeadKeys];
+    let okCount = 0;
+    for (const key of keys) {
+      try {
+        await fetch('/lead', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({key, status, note: ''})
+        });
+        LEADS[key] = {status, note: (LEADS[key] && LEADS[key].note) || '', updated: new Date().toISOString()};
+        okCount++;
+      } catch (err) {}
+    }
+    selectedLeadKeys.clear();
+    $('bulk-status-select').value = '';
+    applyFilters();
+    updateBulkToolbar();
+    showToast(`Updated ${okCount} lead${okCount === 1 ? '' : 's'} to "${LEAD_NAMES[status]}"`);
+  };
+}
+
+if ($('btn-bulk-hide')) {
+  $('btn-bulk-hide').onclick = async () => {
+    if (selectedLeadKeys.size === 0) return;
+    if (!confirm(`Hide ${selectedLeadKeys.size} selected leads from active view?`)) return;
+    const keys = [...selectedLeadKeys];
+    for (const key of keys) {
+      try {
+        await fetch('/hide', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({key, hidden: true})
+        });
+        const r = DATA.find(p => p[23] === key);
+        if (r) r[28] = 1;
+      } catch (err) {}
+    }
+    selectedLeadKeys.clear();
+    applyFilters();
+    updateBulkToolbar();
+    showToast(`Hidden ${keys.length} leads`);
+  };
+}
+
+if ($('btn-bulk-export')) {
+  $('btn-bulk-export').onclick = () => {
+    if (selectedLeadKeys.size === 0) return;
+    const targetRows = rows.filter(r => selectedLeadKeys.has(r[23]));
+    if (!targetRows.length) return;
+    const head = ['title', 'category', 'locality', 'pincode', 'address', 'phone', 'phone_type', 'website', 'website_type', 'emails',
+      'rating', 'reviews', 'latitude', 'longitude', 'claimed', 'status', 'maps_link', 'details', 'services', 'hours',
+      'lead_score', 'months_since_review', 'lead_status', 'lead_note', 'business_fit', 'reviews_last_3_months', 'low_rating_percent', 'guessed_fields', 'edited_by_me'];
+    const cell = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v;
+    const lines = [head.join(',')].concat(targetRows.map(r => {
+      const lead = LEADS[r[23]] || {};
+      const out = r.slice(0, 21).map((v, i) =>
+        i === 6 ? ({m: 'mobile', l: 'landline'}[v] || '') : i === 8 ? ({o: 'own', s: 'social/listing', n: 'none'}[v]) : i === 14 ? (v ? 'yes' : 'no') : v);
+      return out.concat([r[22] >= 0 ? r[22] : '', lead.status || 'new', lead.note || '', r[24] ? 'good' : 'low', r[25], r[26] >= 0 ? r[26] : '', ['', 'category', 'locality', 'category, locality'][r[27] & 3], r[27] & 8 ? 'added' : r[27] & 4 ? 'edited' : '']).map(cell).join(',');
+    }));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], {type: 'text/csv'}));
+    a.download = `leads_selected_${targetRows.length}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast(`Exported ${fmt(targetRows.length)} selected leads`);
+  };
+}
+
+if ($('btn-bulk-clear')) {
+  $('btn-bulk-clear').onclick = () => {
+    selectedLeadKeys.clear();
+    renderPlaces();
+    updateBulkToolbar();
+  };
+}
+
+// ---- Scope and Radius Adjustments ----
+document.querySelectorAll('#view-campaign [data-pad]').forEach(btn => {
+  btn.onclick = () => applyAreaPadding(+btn.dataset.pad);
+});
+
+if ($('btn-pad-sub-10')) $('btn-pad-sub-10').onclick = () => applyAreaPadding(currentPaddingKm - 10);
+if ($('btn-pad-sub-5')) $('btn-pad-sub-5').onclick = () => applyAreaPadding(currentPaddingKm - 5);
+if ($('btn-pad-add-5')) $('btn-pad-add-5').onclick = () => applyAreaPadding(currentPaddingKm + 5);
+if ($('btn-pad-add-10')) $('btn-pad-add-10').onclick = () => applyAreaPadding(currentPaddingKm + 10);
+if ($('btn-pad-add-25')) $('btn-pad-add-25').onclick = () => applyAreaPadding(currentPaddingKm + 25);
+
+// ---- Custom Keyword Packs (localStorage) ----
+function getCustomPacks() {
+  try { return JSON.parse(localStorage.getItem('lf_custom_packs') || '{}'); } catch (e) { return {}; }
+}
+
+function saveCustomPacks(packs) {
+  localStorage.setItem('lf_custom_packs', JSON.stringify(packs));
+  loadCustomPacks();
+}
+
+function loadCustomPacks() {
+  const container = $('custom-packs-container');
+  if (!container) return;
+  const packs = getCustomPacks();
+  const keys = Object.keys(packs);
+  container.hidden = keys.length === 0;
+  container.innerHTML = keys.map(k => `
+    <span class="custom-pack-pill">
+      <button type="button" class="btn-pack custom-pack-btn" data-custom-pack="${esc(k)}">⭐ ${esc(k)} (${packs[k].length})</button>
+      <button type="button" class="custom-pack-del" data-del-pack="${esc(k)}" title="Delete pack">&times;</button>
+    </span>
+  `).join('');
+
+  container.querySelectorAll('[data-custom-pack]').forEach(btn => {
+    btn.onclick = () => {
+      const name = btn.dataset.customPack;
+      const list = (getCustomPacks())[name] || [];
+      if (list.length) addCampaignKeywords(list);
+    };
+  });
+
+  container.querySelectorAll('[data-del-pack]').forEach(btn => {
+    btn.onclick = () => {
+      const name = btn.dataset.delPack;
+      if (!confirm(`Delete custom pack "${name}"?`)) return;
+      const packs = getCustomPacks();
+      delete packs[name];
+      saveCustomPacks(packs);
+      showToast(`Deleted pack "${name}"`);
+    };
+  });
+}
+
+if ($('btn-save-custom-pack')) {
+  $('btn-save-custom-pack').onclick = () => {
+    const words = getCampaignKeywords();
+    if (!words.length) {
+      showToast('Add at least one business keyword before saving a pack');
+      return;
+    }
+    const name = prompt('Name your custom keyword pack (e.g. My Jodhpur Clinics):');
+    if (!name || !name.trim()) return;
+    const cleanName = name.trim();
+    const packs = getCustomPacks();
+    packs[cleanName] = words;
+    saveCustomPacks(packs);
+    showToast(`Saved custom pack "${cleanName}" with ${words.length} keywords`);
+  };
+}
+
+// ---- Google Maps Official Categories Directory Modal ----
+let ALL_CATEGORIES = {};
+let selectedModalCategories = new Set();
+let activeCatIndustry = 'All';
+
+async function loadCategoriesDirectory() {
+  if (Object.keys(ALL_CATEGORIES).length) return;
+  try {
+    const res = await fetch('/categories.json');
+    if (!res.ok) return;
+    ALL_CATEGORIES = await res.json();
+    renderCategoryIndustryTabs();
+    renderCategoryModalList();
+  } catch (err) {
+    console.error('Failed to load categories', err);
+  }
+}
+
+function renderCategoryIndustryTabs() {
+  const container = $('cat-industry-tabs');
+  if (!container) return;
+  const industries = ['All', ...Object.keys(ALL_CATEGORIES)];
+  container.innerHTML = industries.map(ind => {
+    const count = ind === 'All' ? Object.values(ALL_CATEGORIES).flat().length : (ALL_CATEGORIES[ind] || []).length;
+    const isAct = ind === activeCatIndustry;
+    return `<button type="button" class="btn-pack${isAct ? ' active' : ''}" data-cat-ind="${esc(ind)}">${esc(ind)} (${count})</button>`;
+  }).join('');
+
+  container.querySelectorAll('[data-cat-ind]').forEach(btn => {
+    btn.onclick = () => {
+      activeCatIndustry = btn.dataset.catInd;
+      renderCategoryIndustryTabs();
+      renderCategoryModalList();
+    };
+  });
+}
+
+function getFilteredCategories() {
+  const query = ($('cat-modal-search') ? $('cat-modal-search').value : '').trim().toLowerCase();
+  let list = [];
+  if (activeCatIndustry === 'All') {
+    Object.entries(ALL_CATEGORIES).forEach(([ind, cats]) => {
+      cats.forEach(c => list.push({name: c, industry: ind}));
+    });
+  } else {
+    (ALL_CATEGORIES[activeCatIndustry] || []).forEach(c => list.push({name: c, industry: activeCatIndustry}));
+  }
+  if (query) {
+    list = list.filter(item => item.name.toLowerCase().includes(query) || item.industry.toLowerCase().includes(query));
+  }
+  return list;
+}
+
+function renderCategoryModalList() {
+  const container = $('cat-list-container');
+  if (!container) return;
+  const list = getFilteredCategories();
+  if (!list.length) {
+    container.innerHTML = '<div class="dim" style="padding:20px;grid-column:1/-1;text-align:center">No matching categories found.</div>';
+    updateCategoryModalCount();
+    return;
+  }
+  container.innerHTML = list.map(item => {
+    const isChecked = selectedModalCategories.has(item.name.toLowerCase());
+    return `
+      <label class="cat-item">
+        <input type="checkbox" data-cat-name="${esc(item.name)}" ${isChecked ? 'checked' : ''}>
+        <div>
+          <div>${esc(item.name)}</div>
+          <div class="dim" style="font-size:11px">${esc(item.industry)}</div>
+        </div>
+      </label>
+    `;
+  }).join('');
+
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.onchange = () => {
+      const name = cb.dataset.catName.toLowerCase();
+      if (cb.checked) selectedModalCategories.add(name);
+      else selectedModalCategories.delete(name);
+      updateCategoryModalCount();
+    };
+  });
+  updateCategoryModalCount();
+}
+
+function updateCategoryModalCount() {
+  if ($('cat-modal-selection-count')) {
+    $('cat-modal-selection-count').textContent = `${selectedModalCategories.size} categories selected`;
+  }
+}
+
+if ($('btn-browse-categories')) {
+  $('btn-browse-categories').onclick = async () => {
+    await loadCategoriesDirectory();
+    selectedModalCategories.clear();
+    const existing = new Set(getCampaignKeywords().map(w => w.toLowerCase()));
+    Object.values(ALL_CATEGORIES).flat().forEach(c => {
+      if (existing.has(c.toLowerCase())) selectedModalCategories.add(c.toLowerCase());
+    });
+    $('modal-categories').hidden = false;
+    renderCategoryModalList();
+  };
+}
+
+if ($('btn-close-cat-modal')) $('btn-close-cat-modal').onclick = () => $('modal-categories').hidden = true;
+if ($('btn-cancel-cat-modal')) $('btn-cancel-cat-modal').onclick = () => $('modal-categories').hidden = true;
+
+if ($('cat-modal-search')) {
+  $('cat-modal-search').addEventListener('input', () => {
+    if ($('cat-modal-clear')) $('cat-modal-clear').style.display = $('cat-modal-search').value ? 'block' : 'none';
+    renderCategoryModalList();
+  });
+}
+if ($('cat-modal-clear')) {
+  $('cat-modal-clear').onclick = () => {
+    $('cat-modal-search').value = '';
+    $('cat-modal-clear').style.display = 'none';
+    renderCategoryModalList();
+    $('cat-modal-search').focus();
+  };
+}
+
+if ($('btn-cat-select-all')) {
+  $('btn-cat-select-all').onclick = () => {
+    getFilteredCategories().forEach(item => selectedModalCategories.add(item.name.toLowerCase()));
+    renderCategoryModalList();
+  };
+}
+if ($('btn-cat-deselect-all')) {
+  $('btn-cat-deselect-all').onclick = () => {
+    getFilteredCategories().forEach(item => selectedModalCategories.delete(item.name.toLowerCase()));
+    renderCategoryModalList();
+  };
+}
+
+if ($('btn-apply-categories')) {
+  $('btn-apply-categories').onclick = () => {
+    if (selectedModalCategories.size === 0) {
+      showToast('No categories selected');
+      return;
+    }
+    const toAdd = [];
+    const lookup = {};
+    Object.values(ALL_CATEGORIES).flat().forEach(c => { lookup[c.toLowerCase()] = c; });
+    selectedModalCategories.forEach(cLower => {
+      toAdd.push(lookup[cLower] || cLower);
+    });
+    addCampaignKeywords(toAdd);
+    $('modal-categories').hidden = true;
+    showToast(`Added ${toAdd.length} categories to search campaign`);
+  };
 }
 
 $('add-place').onclick = () => showEditForm(null, null);

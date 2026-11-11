@@ -46,6 +46,7 @@ UTF8_BOM = b"\xef\xbb\xbf"
 STATIC_FILES = {
     "/style.css": ("style.css", "text/css; charset=utf-8"),
     "/app.js": ("app.js", "application/javascript; charset=utf-8"),
+    "/categories.json": ("categories.json", "application/json; charset=utf-8"),
 }
 
 # Domains that mean "has a link, but not a website of its own".
