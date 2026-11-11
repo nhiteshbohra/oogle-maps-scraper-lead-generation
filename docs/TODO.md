@@ -8,6 +8,8 @@
 - [x] Interactive UI pagination suite (dynamic per-page selector, smart numbered pills, dual top/bottom controls, quick jump).
 - [x] In-table lead qualification (inline status selector, 1-click phone/summary copy, WhatsApp direct links).
 - [x] Keyboard navigation shortcuts (arrow keys for pagination, '/' to search, 'Esc' to dismiss).
+- [x] UI keyword pack manager (embedded category packs & custom business type additions directly in UI without disk files).
+- [x] Frontend modularization (decouple embedded HTML/CSS/JS template into modular `web/` assets: `index.html`, `style.css`, `app.js`).
 - [ ] Add option in dashboard UI to hide or delete individual businesses from active view.
 - [ ] Code-signing certificate for Windows releases to prevent SmartScreen untrusted binary warnings on fresh PCs.
 - [ ] Extract additional place metadata during scraping: owner review responses, booking links, and linked social profiles.

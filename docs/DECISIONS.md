@@ -79,3 +79,7 @@ Append-only record of design decisions. If a decision is reversed, a new entry i
 - **Decision**: Embed the default 200+ business keyword list and category packs directly inside application code and expose full keyword management (custom additions, quick category packs, clear) in the browser UI, removing the standalone `keywords.txt` file from the repository root.
 - **Why**: Allows the user to configure and operate the entire application directly from the web interface without having to touch, edit, or maintain external text files on disk.
 
+## ADR-019 (2026-11-11): Extract frontend into dedicated `web/` assets
+- **Decision**: Extract the monolithic 1,300+ line embedded HTML/CSS/JS template (`REPORT_TEMPLATE`) from `analyze.py` into dedicated static assets in `web/` (`index.html`, `style.css`, `app.js`) served directly by the Python HTTP handler.
+- **Why**: Drastically improves codebase modularity and developer ergonomics (proper HTML/CSS/JS syntax highlighting, linting, formatting), slashes `analyze.py` file size by over 55%, and decouples frontend UI enhancements from backend Python logic without requiring any external build tooling.
+

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lead Finder &middot; __TITLE__</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main>
+<h1>Lead Finder</h1>
+<div class="sub"><span id="total"></span> &middot; <span id="live">loading...</span></div>
+
+<div class="card scrape-bar">
+  <div id="scrape-text">Checking search status...</div>
+  <div class="actions-row">
+    <button id="scrape-stop" hidden>Stop search</button>
+    <button id="scrape-continue" hidden>Continue search</button>
+    <button id="scrape-open" class="primary">Find businesses</button>
+  </div>
+</div>
+
+<div class="filters card">
+  <div class="search-box">
+    <input id="f-q" type="search" placeholder="Search name, type, service, address">
+    <button id="f-q-clear" class="search-clear" title="Clear search">&times;</button>
+  </div>
+  <select id="f-cat" aria-label="Category"></select>
+  <select id="f-loc" aria-label="Locality"></select>
+  <select class="adv" id="f-pin" aria-label="Pincode"></select>
+  <select class="adv" id="f-web" aria-label="Website">
+    <option value="">Website: any</option><option value="o">Own website</option>
+    <option value="s">Social / listing link only</option><option value="n">No website</option>
+    <option value="sn">No own website</option>
+  </select>
+  <select id="f-phone" aria-label="Phone">
+    <option value="">Phone: any</option><option value="y">Has phone</option><option value="m">Mobile</option>
+    <option value="l">Landline</option><option value="x">No phone</option>
+  </select>
+  <select class="adv" id="f-rating" aria-label="Rating">
+    <option value="">Rating: any</option><option value="4.5">4.5 and up</option><option value="4">4.0 and up</option>
+    <option value="3.5">3.5 and up</option><option value="low">Below 3.5</option><option value="none">Unrated</option>
+  </select>
+  <select class="adv" id="f-rev" aria-label="Reviews">
+    <option value="0">Reviews: any</option><option value="10">10+</option><option value="50">50+</option>
+    <option value="100">100+</option><option value="500">500+</option>
+  </select>
+  <select id="f-score" aria-label="Lead score">
+    <option value="0">Lead score: any</option><option value="80">80+</option><option value="70">70+</option>
+    <option value="50">50+</option>
+  </select>
+  <select class="adv" id="f-hours" aria-label="Opening hours">
+    <option value="">Hours: any</option><option value="now">Open now</option><option value="sun">Open on Sunday</option>
+    <option value="24">Open 24 hours</option><option value="none">Hours not listed</option>
+  </select>
+  <select class="adv" id="f-active" aria-label="Recent activity">
+    <option value="">Activity: any</option><option value="recent">Reviewed in last 3 months</option>
+    <option value="year">Reviewed in last 12 months</option><option value="stale">No review for over a year</option>
+  </select>
+  <select class="adv" id="f-neg" aria-label="Unhappy customers">
+    <option value="0">Low ratings: any</option><option value="20">20%+ are 1-2 star</option>
+    <option value="40">40%+ are 1-2 star</option>
+  </select>
+  <select class="adv" id="f-claim" aria-label="Claimed">
+    <option value="">Listing: any</option><option value="1">Claimed by owner</option><option value="0">Unclaimed</option>
+  </select>
+  <select class="adv" id="f-closed" aria-label="Closed businesses">
+    <option value="">Hide closed</option><option value="all">Include closed</option><option value="only">Closed only</option>
+  </select>
+  <select class="adv" id="f-fit" aria-label="Business fit">
+    <option value="">Good fit only</option><option value="all">Include low fit</option><option value="low">Low fit only</option>
+  </select>
+  <select id="f-lead" aria-label="Lead status"></select>
+  <button id="more">More filters</button>
+  <button id="reset">Reset</button>
+  <button id="add-place">+ Add business</button>
+  <button id="insights">Show insights</button>
+</div>
+
+<div class="presets">
+  <span>Quick views:</span>
+  <button data-preset="best">Best leads (score 70+)</button>
+  <button data-preset="noweb-mobile">No website + mobile number</button>
+  <button class="adv" data-preset="popular-noweb">Popular (50+ reviews), no own website</button>
+  <button class="adv" data-preset="low-rated">Low rated, 10+ reviews</button>
+  <button class="adv" data-preset="unclaimed">Unclaimed listings</button>
+  <button data-preset="open-now">Open now with phone</button>
+  <button class="adv" data-preset="active">Reviewed in last 3 months</button>
+  <button class="adv" data-preset="unhappy">Many unhappy customers</button>
+  <button data-preset="followup">My interested leads</button>
+</div>
+
+<div class="tiles" id="tiles"></div>
+
+<div class="grid ins">
+  <div class="card"><h2>Top categories</h2><div class="bars" id="c-cat"></div></div>
+  <div class="card"><h2>Top localities</h2><div class="bars" id="c-loc"></div></div>
+  <div class="card"><h2>Rating spread</h2><div class="bars" id="c-rating"></div>
+    <h2 style="margin-top:18px">Online presence</h2><div class="bars" id="c-web"></div></div>
+  <div class="card"><h2>Lead score spread</h2><div class="bars" id="c-score"></div>
+    <h2 style="margin-top:18px">Lead status</h2><div class="bars" id="c-lead"></div></div>
+</div>
+
+<div class="card ins" style="margin-bottom:12px">
+  <h2>Category breakdown <span class="dim" style="font-weight:400">- click a row to filter</span></h2>
+  <div class="scroll"><table id="t-cat"></table></div>
+</div>
+
+<div class="card ins" style="margin-bottom:12px" id="map-card">
+  <h2>Map <span class="dim" style="font-weight:400" id="map-note"></span></h2>
+  <div id="map"></div>
+</div>
+
+<div class="card">
+  <div class="bar-top">
+    <div>
+      <h2 style="margin:0;display:inline-block">Places <span class="dim" style="font-weight:400" id="count"></span></h2>
+      <span class="dim" style="font-weight:400;margin-left:8px">- click a row for full details</span>
+    </div>
+    <div class="pager" id="pager-top"></div>
+  </div>
+  <div class="scroll"><table id="t-places"></table></div>
+  <div class="bar-bottom">
+    <div class="dim" id="showing-range"></div>
+    <div class="pager" id="pager-bottom"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+</main>
+
+<aside id="panel" aria-label="Place details"></aside>
+<datalist id="dl-category"></datalist>
+<datalist id="dl-locality"></datalist>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

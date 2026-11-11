@@ -24,7 +24,7 @@ Browser Page  <-- HTTP, localhost:8090 -->  analyze.py  -- starts/stops -->  goo
 | `PlaceStore` | `analyze.py` | Incremental CSV parsing with byte-offset tracking, CID de-duplication, record formatting, business classification, and edit overlays. |
 | `EditBook` / `LeadBook` | `analyze.py` | Persists user annotations, corrections, outreach statuses, and notes in isolated JSON files. |
 | `Dashboard` | `analyze.py` | Local HTTP API server handling `/data.json`, `/place.json`, `/leads.json`, `/scrape.json`, and mutation endpoints (`POST /lead`, `/edit`, `/add`, `/scrape/*`). |
-| Frontend UI | `REPORT_TEMPLATE` in `analyze.py` | Responsive single-page application (SPA) with zero external build dependencies. Uses Leaflet.js for interactive geospatial mapping. |
+| Frontend UI | `web/` (`index.html`, `style.css`, `app.js`) | Responsive single-page application (SPA) with zero external build dependencies. Uses Leaflet.js for interactive geospatial mapping, client-side pagination, quick copy, and keyword management. |
 | `ScrapeManager` | `scraper_control.py` | Process supervisor for the scraper executable: handles resume loops, detects throttling or network blocks, and keeps the OS awake. |
 | Scraper Engine | Go (`main.go`, `gmaps/`, `runner/`, `grid/`) | High-concurrency headless Chromium scraper built on top of `playwright-go` and a patched `scrapemate`. |
 

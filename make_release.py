@@ -28,7 +28,7 @@ PYTHON_URL = f"https://www.python.org/ftp/python/{PYTHON_VERSION}/python-{PYTHON
 # Pinned so a tampered or swapped download is refused.
 PYTHON_SHA256 = "4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3"
 
-APP_FILES = ("Start Lead Finder.bat", "analyze.py", "scraper_control.py")
+APP_FILES = ("Start Lead Finder.bat", "analyze.py", "scraper_control.py", "web")
 SCRAPER_EXE = "google-maps-scraper.exe"
 # -s -w drop debug symbols and -trimpath drops this PC's folder names: 31 MB -> 22 MB.
 BUILD_FLAGS = ("-trimpath", "-ldflags", "-s -w")
@@ -118,8 +118,13 @@ def main():
     print("building the scraper")
     build_scraper(args.go, stage / SCRAPER_EXE)
 
-    for file in APP_FILES:
-        shutil.copy2(ROOT / file, stage / file)
+    for item in APP_FILES:
+        src = ROOT / item
+        dst = stage / item
+        if src.is_dir():
+            shutil.copytree(src, dst)
+        else:
+            shutil.copy2(src, dst)
     add_python(fetch_python(cache), stage / "python")
 
     (stage / "README.txt").write_text(README_TEXT.format(version=args.version), encoding="utf-8")
