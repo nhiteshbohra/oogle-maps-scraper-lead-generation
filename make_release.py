@@ -28,7 +28,7 @@ PYTHON_URL = f"https://www.python.org/ftp/python/{PYTHON_VERSION}/python-{PYTHON
 # Pinned so a tampered or swapped download is refused.
 PYTHON_SHA256 = "4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3"
 
-APP_FILES = ("Start Lead Finder.bat", "analyze.py", "scraper_control.py", "keywords.txt")
+APP_FILES = ("Start Lead Finder.bat", "analyze.py", "scraper_control.py")
 SCRAPER_EXE = "google-maps-scraper.exe"
 # -s -w drop debug symbols and -trimpath drops this PC's folder names: 31 MB -> 22 MB.
 BUILD_FLAGS = ("-trimpath", "-ldflags", "-s -w")

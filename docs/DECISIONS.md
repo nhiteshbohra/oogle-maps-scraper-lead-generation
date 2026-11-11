@@ -75,3 +75,7 @@ Append-only record of design decisions. If a decision is reversed, a new entry i
 - **Decision**: Implement dynamic dual-placement pagination with configurable page sizing (`25`, `50`, `100`, `250`, `All`), numbered smart pills, and inline lead status modification directly on table rows.
 - **Why**: Allows users managing large datasets (10,000+ rows) to browse smoothly without DOM lag, navigate immediately at either end of the table, and qualify prospects without having to repeatedly open and close the detail drawer.
 
+## ADR-018 (2026-11-11): Embed curated keyword packs into application code
+- **Decision**: Embed the default 200+ business keyword list and category packs directly inside application code and expose full keyword management (custom additions, quick category packs, clear) in the browser UI, removing the standalone `keywords.txt` file from the repository root.
+- **Why**: Allows the user to configure and operate the entire application directly from the web interface without having to touch, edit, or maintain external text files on disk.
+

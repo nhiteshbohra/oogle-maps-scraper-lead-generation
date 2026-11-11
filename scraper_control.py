@@ -41,6 +41,105 @@ IO_COUNTER_FIELDS = 6
 
 CELLS_RE = re.compile(r"grid scraping: ~(\d+) cells")
 
+KEYWORD_PACKS = {
+    "high_value": [
+        "gym", "fitness centre", "yoga class", "salon", "beauty parlour", "spa",
+        "makeup artist", "bridal makeup", "tattoo studio", "dental clinic", "clinic",
+        "skin clinic", "hospital", "coaching centre", "restaurant", "cafe", "hotel",
+        "resort", "banquet hall", "wedding planner", "photographer", "interior designer",
+        "real estate agent", "architect", "modular kitchen", "solar panel dealer",
+    ],
+    "healthcare": [
+        "dental clinic", "dentist", "clinic", "doctor", "hospital", "nursing home",
+        "skin clinic", "eye clinic", "physiotherapy", "diagnostic centre", "pathology lab",
+        "IVF centre", "ayurvedic clinic", "homeopathy clinic", "hair transplant clinic",
+        "dietitian", "veterinary clinic", "pet clinic", "medical store", "ayurvedic store",
+    ],
+    "education": [
+        "coaching centre", "coaching institute", "IELTS coaching", "tuition centre",
+        "computer institute", "school", "play school", "preschool", "college",
+        "driving school", "car driving school", "music class", "abacus class",
+        "academy", "institute",
+    ],
+    "food_hospitality": [
+        "restaurant", "cafe", "fast food", "dhaba", "hotel", "hotel restaurant",
+        "guest house", "resort", "resort hotel", "banquet hall", "banquet",
+        "marriage garden", "caterer", "catering service", "bakery", "sweet shop",
+        "namkeen shop", "bakery cake shop",
+    ],
+    "real_estate_home": [
+        "real estate agent", "real estate developer", "property dealer", "builder",
+        "interior designer", "architect", "contractor", "modular kitchen",
+        "furniture showroom", "tiles showroom", "electronics showroom", "solar panel dealer",
+        "CCTV dealer", "pest control", "cleaning service", "AC repair", "RO service",
+        "carpenter", "plumber", "electrician", "painter",
+    ],
+    "services_business": [
+        "chartered accountant", "tax consultant", "lawyer", "insurance agency",
+        "finance company", "loan agent", "packers and movers", "courier service",
+        "transport company", "printing press", "flex printing", "digital printing",
+        "sign board maker", "advertising agency", "digital marketing agency",
+        "software company", "web design company", "security service", "placement agency",
+        "travel agency", "tour operator", "taxi service", "car rental",
+    ],
+    "retail_showrooms": [
+        "jewellers", "jewellery shop", "optician", "supermarket", "clothing store",
+        "garment shop", "saree shop", "boutique", "tailor", "footwear shop",
+        "mobile shop", "mobile repair shop", "electronics shop", "computer shop",
+        "furniture shop", "hardware shop", "paint shop", "sanitary shop",
+        "cosmetic shop", "gift shop", "toy shop", "stationery shop", "car showroom",
+        "bike showroom",
+    ],
+}
+
+DEFAULT_RECOMMENDED_KEYWORDS = (
+    "gym", "fitness centre", "yoga class", "dance class", "salon", "beauty parlour",
+    "barber shop", "spa", "makeup artist", "bridal makeup", "tattoo studio",
+    "dental clinic", "dentist", "clinic", "doctor", "hospital", "nursing home",
+    "skin clinic", "eye clinic", "physiotherapy", "diagnostic centre", "pathology lab",
+    "IVF centre", "ayurvedic clinic", "homeopathy clinic", "hair transplant clinic",
+    "dietitian", "veterinary clinic", "pet clinic", "coaching centre", "coaching institute",
+    "IELTS coaching", "tuition centre", "computer institute", "school", "play school",
+    "preschool", "college", "driving school", "car driving school", "music class",
+    "abacus class", "restaurant", "cafe", "fast food", "dhaba", "hotel",
+    "hotel restaurant", "guest house", "resort", "resort hotel", "banquet hall",
+    "banquet", "marriage garden", "caterer", "catering service", "real estate agent",
+    "real estate developer", "property dealer", "builder", "interior designer",
+    "architect", "contractor", "travel agency", "tour operator", "taxi service",
+    "car rental", "immigration consultant", "car showroom", "bike showroom",
+    "two wheeler showroom", "used car dealer", "car repair", "bike repair", "car wash",
+    "photographer", "wedding photographer", "photo studio", "event management",
+    "wedding planner", "tent house", "DJ service", "mehndi artist",
+    "chartered accountant", "tax consultant", "lawyer", "insurance agency",
+    "finance company", "loan agent", "packers and movers", "packers movers",
+    "courier service", "transport company", "pest control", "cleaning service",
+    "laundry", "dry cleaner", "AC repair", "RO service", "printing press",
+    "flex printing", "digital printing", "sign board maker", "advertising agency",
+    "digital marketing agency", "software company", "web design company",
+    "security service", "placement agency", "solar panel dealer", "CCTV dealer",
+    "modular kitchen", "furniture showroom", "tiles showroom", "electronics showroom",
+    "jewellers", "jewellery shop", "optician", "shop", "store", "kirana store",
+    "general store", "grocery store", "supermarket", "provision store", "sweet shop",
+    "namkeen shop", "bakery", "dry fruit shop", "spice shop", "clothing store",
+    "garment shop", "saree shop", "fabric shop", "boutique", "tailor",
+    "readymade garments", "footwear shop", "bag shop", "watch shop", "optical shop",
+    "imitation jewellery", "cosmetic shop", "gift shop", "toy shop", "stationery shop",
+    "book shop", "sports shop", "handicraft shop", "pooja samagri shop", "flower shop",
+    "mobile shop", "mobile repair shop", "electronics shop", "computer shop",
+    "electrical shop", "home appliances shop", "hardware shop", "paint shop",
+    "sanitary shop", "tiles shop", "plywood shop", "building material shop",
+    "furniture shop", "mattress shop", "utensil shop", "crockery shop", "medical store",
+    "ayurvedic store", "pet shop", "auto parts shop", "tyre shop", "cycle shop",
+    "wholesaler", "showroom", "hostel", "notary", "carpenter", "plumber", "electrician",
+    "painter", "astrologer", "consultant", "manufacturer", "factory", "exporter",
+    "handicraft exporter", "furniture manufacturer", "textile", "stone supplier",
+    "marble supplier", "steel fabricator", "packaging supplier", "chemical supplier",
+    "machinery dealer", "cinema", "gaming zone", "office", "company", "agency",
+    "services", "studio", "workshop", "institute", "academy", "centre",
+    "laptop store", "car accessories", "bakery cake shop", "boutique designer",
+    "gift and toys", "mobile accessories wholesale",
+)
+
 
 def set_keep_awake(flags):
     if os.name == "nt":
@@ -146,10 +245,10 @@ def clean_settings(raw):
 class ScrapeManager:
     """Starts, watches and stops the scraper process for one results file."""
 
-    def __init__(self, results, exe, default_keywords):
+    def __init__(self, results, exe, default_keywords=None):
         self.results = Path(results)
         self.exe = Path(exe)
-        self.default_keywords = Path(default_keywords)
+        self.default_keywords = Path(default_keywords) if default_keywords else None
         self.settings_path = self.results.with_name(self.results.name + ".scrape.json")
         self.keywords_path = self.results.with_name(self.results.name + ".keywords.txt")
         self.state_path = self.results.with_name(self.results.name + ".resume.json")
@@ -182,9 +281,13 @@ class ScrapeManager:
 
     def recommended_keywords(self):
         try:
-            return [line.strip() for line in self.default_keywords.read_text(encoding="utf-8-sig").splitlines() if line.strip()]
+            if self.default_keywords and Path(self.default_keywords).exists():
+                lines = [line.strip() for line in Path(self.default_keywords).read_text(encoding="utf-8-sig").splitlines() if line.strip()]
+                if lines:
+                    return lines
         except OSError:
-            return []
+            pass
+        return list(DEFAULT_RECOMMENDED_KEYWORDS)
 
     def completed_count(self):
         try:
@@ -212,6 +315,7 @@ class ScrapeManager:
             if with_keywords:
                 body["settings"] = settings
                 body["recommended"] = self.recommended_keywords()
+                body["packs"] = KEYWORD_PACKS
             return body
 
     def start(self, settings=None):

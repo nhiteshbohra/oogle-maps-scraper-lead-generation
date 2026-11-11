@@ -37,7 +37,7 @@ DEFAULT_PORT = 8090
 APP_DIR = Path(__file__).resolve().parent
 DEFAULT_RESULTS = APP_DIR / "data" / "leads.csv"
 SCRAPER_EXE = APP_DIR / "google-maps-scraper.exe"
-DEFAULT_KEYWORDS = APP_DIR / "keywords.txt"
+DEFAULT_KEYWORDS = APP_DIR / "keywords.txt" if (APP_DIR / "keywords.txt").exists() else None
 JSON_TYPE = "application/json; charset=utf-8"
 UTF8_BOM = b"\xef\xbb\xbf"
 
@@ -1032,6 +1032,8 @@ a:hover{text-decoration:underline}
 .search-clear:hover{color:var(--ink)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--page);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s ease}
 .toast.show{opacity:1}
+.btn-pack{font-size:11px;padding:3px 8px;border-radius:12px;background:var(--surface);border:1px solid var(--border);color:var(--ink2);cursor:pointer;transition:all .15s}
+.btn-pack:hover{background:var(--wash);border-color:var(--bar);color:var(--bar)}
 #map{height:460px;border-radius:8px}
 .empty{color:var(--muted);padding:20px 0;text-align:center}
 #panel{position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);z-index:2000;background:var(--surface);
@@ -2048,8 +2050,26 @@ async function openScrapePanel() {
       <div id="s-map"></div>
       <div class="dim" id="s-size"></div>
       <h3>2. Which businesses <span class="dim" style="font-weight:400" id="s-count"></span></h3>
-      <div class="form" style="grid-template-columns:1fr"><textarea id="s-keywords" spellcheck="false">${esc(keywords)}</textarea></div>
-      <div class="actions" style="margin-top:6px"><button id="s-recommended">Use recommended list</button><span class="dim">one business type per line</span></div>
+      <div style="margin-bottom:8px">
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <input id="s-kw-input" placeholder="Add custom type (e.g. gym, salon, clinic)" style="flex:1">
+          <button id="s-kw-add">+ Add type</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:6px">
+          <span class="dim" style="font-size:11px">Packs:</span>
+          <button class="btn-pack" data-pack="high_value" title="Gyms, salons, dental, clinics, coaching, restaurants">+ High Value</button>
+          <button class="btn-pack" data-pack="healthcare" title="Dental, doctors, hospitals, pathology, labs">+ Healthcare</button>
+          <button class="btn-pack" data-pack="education" title="Coaching, institutes, tuition, schools">+ Education</button>
+          <button class="btn-pack" data-pack="food_hospitality" title="Restaurants, cafes, hotels, banquet">+ Dining</button>
+          <button class="btn-pack" data-pack="real_estate_home" title="Real estate, builders, interior, home services">+ Real Estate</button>
+          <button class="btn-pack" data-pack="retail_showrooms" title="Jewellery, clothing, mobile, electronics">+ Retail</button>
+          <button class="btn-pack" id="s-recommended" title="Load all 200+ curated keywords">All 200+</button>
+          <button class="btn-pack" id="s-clear-kw" style="color:var(--crit)">Clear</button>
+        </div>
+      </div>
+      <div class="form" style="grid-template-columns:1fr">
+        <textarea id="s-keywords" spellcheck="false" rows="7" placeholder="Type or paste one business type per line...">${esc(keywords)}</textarea>
+      </div>
       <h3>3. How</h3>
       <div class="form">
         <label for="s-cell">Detail</label><select id="s-cell">
@@ -2113,7 +2133,61 @@ async function openScrapePanel() {
 
   $('s-find').onclick = findArea;
   $('s-area').onkeydown = ev => { if (ev.key === 'Enter') findArea(); };
-  $('s-recommended').onclick = () => { $('s-keywords').value = s.recommended.join('\n'); describe(); };
+
+  const addKeywords = wordsToAppend => {
+    const existing = new Set(keywordList().map(w => w.toLowerCase()));
+    const toAdd = [];
+    wordsToAppend.forEach(w => {
+      const clean = w.trim();
+      if (clean && !existing.has(clean.toLowerCase())) {
+        existing.add(clean.toLowerCase());
+        toAdd.push(clean);
+      }
+    });
+    if (toAdd.length > 0) {
+      const cur = $('s-keywords').value.trim();
+      $('s-keywords').value = (cur ? cur + '\n' : '') + toAdd.join('\n');
+      showToast(`Added ${toAdd.length} business type${toAdd.length > 1 ? 's' : ''}`);
+    } else {
+      showToast('All those business types are already in your list');
+    }
+    describe();
+  };
+
+  $('s-kw-add').onclick = () => {
+    const val = $('s-kw-input').value.trim();
+    if (!val) return;
+    addKeywords([val]);
+    $('s-kw-input').value = '';
+    $('s-kw-input').focus();
+  };
+  $('s-kw-input').onkeydown = ev => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      $('s-kw-add').click();
+    }
+  };
+
+  $('panel').querySelectorAll('button[data-pack]').forEach(btn => {
+    btn.onclick = () => {
+      const packName = btn.dataset.pack;
+      const packList = (s.packs && s.packs[packName]) ? s.packs[packName] : [];
+      if (packList.length) addKeywords(packList);
+    };
+  });
+
+  $('s-recommended').onclick = () => {
+    $('s-keywords').value = (s.recommended || []).join('\n');
+    showToast(`Loaded ${(s.recommended || []).length} recommended types`);
+    describe();
+  };
+
+  $('s-clear-kw').onclick = () => {
+    $('s-keywords').value = '';
+    showToast('Cleared business types');
+    describe();
+  };
+
   ['s-keywords', 's-cell', 's-speed'].forEach(id => $(id).addEventListener('input', describe));
   $('s-start').onclick = async () => {
     $('s-error').textContent = '';
