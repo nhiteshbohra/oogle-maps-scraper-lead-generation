@@ -87,3 +87,7 @@ Append-only record of design decisions. If a decision is reversed, a new entry i
 - **Decision**: Introduce a top-level tabbed navigation separating "🎯 Target & Scrape" (Campaign Manager) from "📋 Leads & CRM". Replace the slide-out drawer with a dedicated full-screen workspace featuring interactive keyword chips, category pack quick-selection, bulk keyword pasting, interactive geocoded area mapping, live search estimates, and real-time execution controls.
 - **Why**: Dramatically improves onboarding for new users starting from scratch with 0 leads. Empowers users to configure, manage, and monitor their targeted business campaigns entirely from the browser without ever needing terminal commands or manual configuration files.
 
+## ADR-021 (2026-11-11): In-browser lead exclusion, database reset with auto-backup, and live log streaming
+- **Decision**: Add full lead exclusion/hiding (tracked in `.edits.json` and filtered client-side with restoration support), safe database reset with automatic timestamped directory backups, and real-time scraper log streaming via `/scrape.json` inside the web interface.
+- **Why**: Eliminates the remaining manual tasks that previously required opening Windows File Explorer or checking terminal windows, allowing the user to manage the complete lead lifecycle directly through the browser.
+

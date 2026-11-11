@@ -83,6 +83,10 @@ button.primary:hover{background:var(--bar);opacity:.88}
 .section-title{margin-top:18px}
 .places-heading{margin:0;display:inline-block}
 .places-subtitle{margin-left:8px}
+.log-terminal{background:#0d0d0d;color:#10b981;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;padding:12px;border-radius:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border);white-space:pre-wrap;word-break:break-all}
+.collapsible-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.db-actions-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.tag.hidden-tag{background:var(--crit);color:#fff;border-color:var(--crit)}
 
 #s-map{height:220px;border-radius:8px;margin-top:8px}
 #panel .form textarea{min-height:150px;margin:0}

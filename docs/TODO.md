@@ -10,7 +10,9 @@
 - [x] Keyboard navigation shortcuts (arrow keys for pagination, '/' to search, 'Esc' to dismiss).
 - [x] UI keyword pack manager (embedded category packs & custom business type additions directly in UI without disk files).
 - [x] Frontend modularization (decouple embedded HTML/CSS/JS template into modular `web/` assets: `index.html`, `style.css`, `app.js`).
-- [ ] Add option in dashboard UI to hide or delete individual businesses from active view.
+- [x] Add option in dashboard UI to hide or delete individual businesses from active view (with filter & restore).
+- [x] In-browser database management (1-click auto-backup and safe database reset to start fresh campaigns).
+- [x] Real-time scraper activity and diagnostic log streaming inside the UI.
 - [ ] Code-signing certificate for Windows releases to prevent SmartScreen untrusted binary warnings on fresh PCs.
 - [ ] Extract additional place metadata during scraping: owner review responses, booking links, and linked social profiles.
 - [ ] Test self-contained release ZIP packaging on independent clean Windows test environments.

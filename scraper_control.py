@@ -312,11 +312,24 @@ class ScrapeManager:
                 "area": settings["area"] if settings else "",
                 "exe_found": self.exe.exists(),
             }
+            recent_logs = []
+            if self.log_path.exists():
+                try:
+                    with open(self.log_path, "r", encoding="utf-8", errors="replace") as f:
+                        lines = f.readlines()
+                        recent_logs = [l.rstrip("\r\n") for l in lines[-35:]]
+                except OSError:
+                    pass
+            body["recent_logs"] = recent_logs
             if with_keywords:
                 body["settings"] = settings
                 body["recommended"] = self.recommended_keywords()
                 body["packs"] = KEYWORD_PACKS
             return body
+
+    def is_running(self):
+        with self.lock:
+            return self.state in ("running", "waiting")
 
     def start(self, settings=None):
         """Start scraping with new settings, or continue with the saved ones."""

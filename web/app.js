@@ -263,8 +263,12 @@ function filterRows() {
   const q = v('f-q').trim().toLowerCase(), cat = v('f-cat'), loc = v('f-loc'), pin = v('f-pin');
   const web = v('f-web'), phone = v('f-phone'), rating = v('f-rating'), hours = v('f-hours');
   const minRev = +v('f-rev'), minScore = +v('f-score'), claim = v('f-claim'), closed = v('f-closed'), lead = v('f-lead'), fit = v('f-fit');
-  const active = v('f-active'), minNeg = +v('f-neg');
+  const active = v('f-active'), minNeg = +v('f-neg'), hiddenOpt = v('f-hidden');
   rows = DATA.filter(r => {
+    const isHidden = r[28] === 1;
+    if (hiddenOpt === 'only') { if (!isHidden) return false; }
+    else if (hiddenOpt === 'all') { /* include both */ }
+    else { if (isHidden) return false; }
     if (cat && r[1] !== cat) return false;
     if (loc && r[2] !== loc) return false;
     if (pin && r[3] !== pin) return false;
@@ -424,7 +428,7 @@ function renderPlaces() {
           <b>${esc(r[0])}</b>
           <button type="button" class="copy-btn" title="Copy business info" onclick="event.stopPropagation();copyLeadSummary('${esc(r[23])}')">&#128203;</button>
         </div>
-        ${r[27] & 8 ? ' <span class="tag">added by me</span>' : r[27] & 4 ? ' <span class="tag">edited</span>' : ''}
+        ${r[28] === 1 ? ' <span class="tag hidden-tag">Hidden</span>' : ''}${r[27] & 8 ? ' <span class="tag">added by me</span>' : r[27] & 4 ? ' <span class="tag">edited</span>' : ''}
         <div class="dim">${esc(r[4])}${r[3] && !r[4].includes(r[3]) ? ' - ' + esc(r[3]) : ''}</div>
         ${isClosed(r) ? `<div class="closed">${esc(r[15])}</div>` : ''}
       </td>
@@ -545,6 +549,9 @@ async function openPlace(key) {
       ${r[5] ? `<a class="btn" href="tel:${esc(r[5])}">Call ${esc(r[5])}</a>` : ''}
       ${waLink(r) ? link(waLink(r), 'WhatsApp') : ''}
       ${r[16] ? link(r[16], 'Google Maps') : ''}
+      ${(r[28] === 1 || d.hidden)
+        ? '<button type="button" id="p-restore-lead" class="primary">Restore lead</button>'
+        : '<button type="button" id="p-hide-lead" class="crit">Hide / Exclude</button>'}
       <button type="button" id="p-edit">Edit details</button>
       ${/^https?:\/\//i.test(r[7]) ? link(r[7], r[8] === 's' ? 'Social link' : 'Website') : ''}
       ${d.street ? link(d.street, 'Street View') : ''}
@@ -592,6 +599,43 @@ async function openPlace(key) {
   if ($('p-day')) { $('p-day').onchange = () => renderBusy(d.busy); renderBusy(d.busy); }
   $('p-close').onclick = closePlace;
   $('p-edit').onclick = () => showEditForm(r, d);
+  if ($('p-hide-lead')) {
+    $('p-hide-lead').onclick = async () => {
+      if (!confirm(`Hide "${r[0]}" from active leads?`)) return;
+      try {
+        const res = await fetch('/hide', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({key: r[23], hidden: true})
+        });
+        if (!res.ok) throw new Error('Failed to hide lead');
+        r[28] = 1;
+        applyFilters();
+        openPlace(r[23]);
+        showToast(`Hidden "${r[0]}"`);
+      } catch (err) {
+        showToast(err.message);
+      }
+    };
+  }
+  if ($('p-restore-lead')) {
+    $('p-restore-lead').onclick = async () => {
+      try {
+        const res = await fetch('/hide', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({key: r[23], hidden: false})
+        });
+        if (!res.ok) throw new Error('Failed to restore lead');
+        r[28] = 0;
+        applyFilters();
+        openPlace(r[23]);
+        showToast(`Restored "${r[0]}"`);
+      } catch (err) {
+        showToast(err.message);
+      }
+    };
+  }
   $('p-save').onclick = () => saveLead(key);
   if ($('p-same')) $('p-same').onclick = ev => { ev.preventDefault(); resetFilters(); $('f-closed').value = 'all'; $('f-q').value = r[5]; applyFilters(); };
 }
@@ -698,7 +742,7 @@ function exportCsv() {
   showToast(`Exported ${fmt(rows.length)} places to CSV`);
 }
 
-const FILTER_IDS = ['f-q', 'f-cat', 'f-loc', 'f-pin', 'f-web', 'f-phone', 'f-rating', 'f-rev', 'f-score', 'f-hours', 'f-active', 'f-neg', 'f-claim', 'f-closed', 'f-fit', 'f-lead'];
+const FILTER_IDS = ['f-q', 'f-cat', 'f-loc', 'f-pin', 'f-web', 'f-phone', 'f-rating', 'f-rev', 'f-score', 'f-hours', 'f-active', 'f-neg', 'f-claim', 'f-closed', 'f-fit', 'f-hidden', 'f-lead'];
 const PRESETS = {
   'best': {'f-score': '70'},
   'noweb-mobile': {'f-web': 'n', 'f-phone': 'm'},
@@ -894,6 +938,13 @@ function renderScrapeStatus() {
       ${s.total ? `<div class="progress" style="margin-top:8px"><div style="width:${percent}%"></div></div>` : ''}
     `;
   }
+  if ($('scraper-logs-pre') && s.recent_logs && s.recent_logs.length) {
+    $('scraper-logs-pre').textContent = s.recent_logs.join('\n');
+    const container = $('scraper-logs-container');
+    if (container && !container.hidden) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }
   if ($('s-start-main')) {
     $('s-start-main').textContent = isRunning ? 'Stop Search' : 'Start Search';
     $('s-start-main').className = isRunning ? 'campaign-launch-btn' : 'primary campaign-launch-btn';
@@ -923,6 +974,52 @@ async function loadCampaignSettings() {
     initCampaignMap();
     describeCampaign();
     renderScrapeStatus();
+
+    if ($('btn-toggle-logs')) {
+      $('btn-toggle-logs').onclick = () => {
+        const container = $('scraper-logs-container');
+        if (!container) return;
+        const isHidden = container.hidden;
+        container.hidden = !isHidden;
+        $('btn-toggle-logs').textContent = isHidden ? 'Hide Live Logs ↑' : 'Show Live Logs ↓';
+        if (isHidden) container.scrollTop = container.scrollHeight;
+      };
+    }
+
+    if ($('btn-backup-db')) {
+      $('btn-backup-db').onclick = async () => {
+        try {
+          const res = await fetch('/database/backup', {method: 'POST', headers: {'Content-Type': 'application/json'}});
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Backup failed');
+          showToast(`Backup saved: ${data.backup}`);
+        } catch (err) {
+          showToast(err.message);
+        }
+      };
+    }
+
+    if ($('btn-reset-db')) {
+      $('btn-reset-db').onclick = async () => {
+        if (scrapeStatus && (scrapeStatus.state === 'running' || scrapeStatus.state === 'waiting')) {
+          showToast('Stop the active search before resetting the database');
+          return;
+        }
+        if (!confirm('Are you sure you want to clear all leads and start fresh?\n\nA full backup will be automatically saved in data/backups/ before clearing.')) return;
+        try {
+          const res = await fetch('/database/reset', {method: 'POST', headers: {'Content-Type': 'application/json'}});
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Reset failed');
+          DATA = [];
+          showNewData();
+          load();
+          showToast(`Database cleared. Auto-backup saved: ${data.backup}`);
+          switchView('campaign');
+        } catch (err) {
+          showToast(err.message);
+        }
+      };
+    }
   } catch (err) {
     console.error('Failed to load campaign settings:', err);
   }

@@ -21,6 +21,7 @@ import json
 import math
 import os
 import re
+import shutil
 import sys
 import threading
 import time
@@ -152,7 +153,7 @@ AGE_BUCKETS = (3, 11, 24)  # "a year ago" is 12 months, so it lands in the 1-2 y
 LEAD_STATUSES = ("new", "called", "interested", "rejected", "customer")
 MAX_NOTE_LENGTH = 2000
 MAX_POST_BYTES = 64 * 1024
-POST_PATHS = ("/lead", "/edit", "/add", "/scrape/start", "/scrape/stop")
+POST_PATHS = ("/lead", "/edit", "/add", "/hide", "/database/reset", "/database/backup", "/scrape/start", "/scrape/stop")
 
 # Row layout sent to the page (see the same list in the page script).
 EXPORT_COLUMNS = [
@@ -161,6 +162,7 @@ EXPORT_COLUMNS = [
     "longitude", "claimed", "status", "maps_link", "details", "services", "hours",
     "lead_score", "months_since_review", "lead_status", "lead_note", "business_fit",
     "reviews_last_3_months", "low_rating_percent", "guessed_fields", "edited_by_me",
+    "is_hidden",
 ]
 
 INFERRED_NAMES = {0: "", INFERRED_CATEGORY: "category", INFERRED_LOCALITY: "locality", INFERRED_CATEGORY | INFERRED_LOCALITY: "category, locality"}
@@ -455,7 +457,13 @@ class PlaceStore:
         if "locality" in edit:
             flags &= ~INFERRED_LOCALITY
         row[27] = flags | (EDITED if edit else 0)
+        is_hidden = 1 if key in self.book.hidden else 0
+        if len(row) > 28:
+            row[28] = is_hidden
+        else:
+            row.append(is_hidden)
         detail["edited"] = sorted(edit)
+        detail["hidden"] = bool(is_hidden)
         return row
 
     def register(self, key, detail, flags):
@@ -663,6 +671,15 @@ class EditBook:
         saved = load_json(path.read_text(encoding="utf-8"), {}) if path and path.exists() else {}
         self.edits = saved.get("edits") or {}  # place key -> {field: corrected value}
         self.added = saved.get("added") or []  # businesses with no Google listing behind them
+        self.hidden = set(saved.get("hidden") or [])
+
+    def hide(self, key, is_hidden=True):
+        with self.lock:
+            if is_hidden:
+                self.hidden.add(key)
+            else:
+                self.hidden.discard(key)
+            self.save()
 
     def set(self, key, changed):
         with self.lock:
@@ -680,7 +697,8 @@ class EditBook:
     def save(self):
         # Write to a temp file first so a crash never leaves a half-written file.
         temp = self.path.with_name(self.path.name + ".tmp")
-        temp.write_text(json.dumps({"edits": self.edits, "added": self.added}, ensure_ascii=False, indent=1), encoding="utf-8")
+        payload = {"edits": self.edits, "added": self.added, "hidden": sorted(self.hidden)}
+        temp.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
         os.replace(temp, self.path)
 
 
@@ -831,6 +849,50 @@ class Dashboard:
             self.store.add_manual(entry)
         return entry["key"]
 
+    def hide_place(self, key: str, is_hidden: bool = True):
+        with self.lock:
+            self.book.hide(key, is_hidden)
+            return self.store.apply_edit(key)
+
+    def backup_database(self) -> str:
+        with self.lock:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_dir = APP_DIR / "data" / "backups" / f"backup_{ts}"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            for p in self.sources:
+                if p.exists():
+                    shutil.copy2(p, backup_dir / p.name)
+                for suffix in (".leads.json", ".edits.json", ".resume.json", ".log"):
+                    sidecar = p.with_name(p.name + suffix)
+                    if sidecar.exists():
+                        shutil.copy2(sidecar, backup_dir / sidecar.name)
+            return backup_dir.name
+
+    def reset_database(self) -> str:
+        with self.lock:
+            backup_name = self.backup_database()
+            main_src = self.sources[0]
+            if main_src.exists():
+                with open(main_src, "r", encoding="utf-8", errors="replace") as fh:
+                    first_line = fh.readline()
+                with open(main_src, "w", encoding="utf-8") as fh:
+                    if first_line.startswith("title"):
+                        fh.write(first_line)
+                    else:
+                        fh.write("")
+            for p in self.sources:
+                for suffix in (".leads.json", ".edits.json", ".resume.json", ".log"):
+                    sidecar = p.with_name(p.name + suffix)
+                    if sidecar.exists():
+                        try:
+                            sidecar.unlink()
+                        except OSError:
+                            pass
+            self.leads = LeadBook(main_src.with_name(main_src.name + ".leads.json"))
+            self.book = EditBook(main_src.with_name(main_src.name + ".edits.json"))
+            self.store = PlaceStore(self.sources, self.book)
+            return backup_name
+
     def read_static(self, name: str) -> bytes | None:
         path = WEB_DIR / name
         if not path.is_file():
@@ -899,6 +961,21 @@ class Dashboard:
                     if self.path == "/add":
                         key = dashboard.add_place(clean_fields(body.get("fields") or {}))
                         return self.reply(json.dumps({"key": key}).encode("utf-8"), "application/json; charset=utf-8")
+                    if self.path == "/hide":
+                        key = str(body.get("key") or "")
+                        is_hidden = bool(body.get("hidden", True))
+                        row = dashboard.hide_place(key, is_hidden)
+                        if row is None:
+                            return self.send_error(404)
+                        return self.reply(json.dumps({"row": row, "hidden": is_hidden}, ensure_ascii=False).encode("utf-8"), JSON_TYPE)
+                    if self.path == "/database/backup":
+                        backup_name = dashboard.backup_database()
+                        return self.reply(json.dumps({"status": "ok", "backup": backup_name}).encode("utf-8"), JSON_TYPE)
+                    if self.path == "/database/reset":
+                        if dashboard.scraper.is_running():
+                            return self.reply(json.dumps({"error": "Cannot reset database while a search is running. Stop search first."}).encode("utf-8"), JSON_TYPE, 400)
+                        backup_name = dashboard.reset_database()
+                        return self.reply(json.dumps({"status": "ok", "backup": backup_name}).encode("utf-8"), JSON_TYPE)
                     key, status = str(body["key"]), str(body["status"])
                     note = str(body.get("note") or "").strip()[:MAX_NOTE_LENGTH]
                 except (ValueError, KeyError, TypeError):

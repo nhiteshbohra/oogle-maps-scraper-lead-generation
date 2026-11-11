@@ -47,6 +47,16 @@
 
     <div id="s-main-status" class="card mb-12"></div>
 
+    <div class="card mb-12">
+      <div class="collapsible-header" id="toggle-scraper-logs">
+        <h3 class="m-0">Live Scraper Activity Logs</h3>
+        <button type="button" class="text-btn" id="btn-toggle-logs">Show Live Logs &darr;</button>
+      </div>
+      <div id="scraper-logs-container" class="log-terminal mt-8" hidden>
+        <pre id="scraper-logs-pre" class="m-0">No active logs yet.</pre>
+      </div>
+    </div>
+
     <div class="campaign-grid">
       <!-- Left Column: Location & Settings -->
       <div class="campaign-col">
@@ -82,6 +92,15 @@
           </div>
           <div class="estimate-box mt-8">
             <div class="dim" id="s-estimate">Choose an area and keywords to see search estimates.</div>
+          </div>
+        </div>
+
+        <div class="card mb-12">
+          <h3>4. Database &amp; Campaign Reset</h3>
+          <p class="dim">Backup your collected leads or clear the database to start a fresh search in a new city.</p>
+          <div class="db-actions-row">
+            <button type="button" id="btn-backup-db">Backup Leads</button>
+            <button type="button" class="crit" id="btn-reset-db">Clear Leads &amp; Start Fresh</button>
           </div>
         </div>
       </div>
@@ -190,6 +209,9 @@
       </select>
       <select class="adv" id="f-fit" aria-label="Business fit">
         <option value="">Good fit only</option><option value="all">Include low fit</option><option value="low">Low fit only</option>
+      </select>
+      <select class="adv" id="f-hidden" aria-label="Excluded businesses">
+        <option value="">Hide excluded</option><option value="all">Include excluded</option><option value="only">Excluded only</option>
       </select>
       <select id="f-lead" aria-label="Lead status"></select>
       <button type="button" id="more">More filters</button>
