@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -15,16 +15,16 @@
 <div class="card scrape-bar">
   <div id="scrape-text">Checking search status...</div>
   <div class="actions-row">
-    <button id="scrape-stop" hidden>Stop search</button>
-    <button id="scrape-continue" hidden>Continue search</button>
-    <button id="scrape-open" class="primary">Find businesses</button>
+    <button type="button" id="scrape-stop" hidden>Stop search</button>
+    <button type="button" id="scrape-continue" hidden>Continue search</button>
+    <button type="button" id="scrape-open" class="primary">Find businesses</button>
   </div>
 </div>
 
 <div class="filters card">
   <div class="search-box">
     <input id="f-q" type="search" placeholder="Search name, type, service, address">
-    <button id="f-q-clear" class="search-clear" title="Clear search">&times;</button>
+    <button type="button" id="f-q-clear" class="search-clear" title="Clear search">&times;</button>
   </div>
   <select id="f-cat" aria-label="Category"></select>
   <select id="f-loc" aria-label="Locality"></select>
@@ -72,23 +72,23 @@
     <option value="">Good fit only</option><option value="all">Include low fit</option><option value="low">Low fit only</option>
   </select>
   <select id="f-lead" aria-label="Lead status"></select>
-  <button id="more">More filters</button>
-  <button id="reset">Reset</button>
-  <button id="add-place">+ Add business</button>
-  <button id="insights">Show insights</button>
+  <button type="button" id="more">More filters</button>
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="add-place">+ Add business</button>
+  <button type="button" id="insights">Show insights</button>
 </div>
 
 <div class="presets">
   <span>Quick views:</span>
-  <button data-preset="best">Best leads (score 70+)</button>
-  <button data-preset="noweb-mobile">No website + mobile number</button>
-  <button class="adv" data-preset="popular-noweb">Popular (50+ reviews), no own website</button>
-  <button class="adv" data-preset="low-rated">Low rated, 10+ reviews</button>
-  <button class="adv" data-preset="unclaimed">Unclaimed listings</button>
-  <button data-preset="open-now">Open now with phone</button>
-  <button class="adv" data-preset="active">Reviewed in last 3 months</button>
-  <button class="adv" data-preset="unhappy">Many unhappy customers</button>
-  <button data-preset="followup">My interested leads</button>
+  <button type="button" data-preset="best">Best leads (score 70+)</button>
+  <button type="button" data-preset="noweb-mobile">No website + mobile number</button>
+  <button type="button" class="adv" data-preset="popular-noweb">Popular (50+ reviews), no own website</button>
+  <button type="button" class="adv" data-preset="low-rated">Low rated, 10+ reviews</button>
+  <button type="button" class="adv" data-preset="unclaimed">Unclaimed listings</button>
+  <button type="button" data-preset="open-now">Open now with phone</button>
+  <button type="button" class="adv" data-preset="active">Reviewed in last 3 months</button>
+  <button type="button" class="adv" data-preset="unhappy">Many unhappy customers</button>
+  <button type="button" data-preset="followup">My interested leads</button>
 </div>
 
 <div class="tiles" id="tiles"></div>
@@ -97,26 +97,26 @@
   <div class="card"><h2>Top categories</h2><div class="bars" id="c-cat"></div></div>
   <div class="card"><h2>Top localities</h2><div class="bars" id="c-loc"></div></div>
   <div class="card"><h2>Rating spread</h2><div class="bars" id="c-rating"></div>
-    <h2 style="margin-top:18px">Online presence</h2><div class="bars" id="c-web"></div></div>
+    <h2 class="section-title">Online presence</h2><div class="bars" id="c-web"></div></div>
   <div class="card"><h2>Lead score spread</h2><div class="bars" id="c-score"></div>
-    <h2 style="margin-top:18px">Lead status</h2><div class="bars" id="c-lead"></div></div>
+    <h2 class="section-title">Lead status</h2><div class="bars" id="c-lead"></div></div>
 </div>
 
-<div class="card ins" style="margin-bottom:12px">
-  <h2>Category breakdown <span class="dim" style="font-weight:400">- click a row to filter</span></h2>
+<div class="card ins mb-12">
+  <h2>Category breakdown <span class="dim">- click a row to filter</span></h2>
   <div class="scroll"><table id="t-cat"></table></div>
 </div>
 
-<div class="card ins" style="margin-bottom:12px" id="map-card">
-  <h2>Map <span class="dim" style="font-weight:400" id="map-note"></span></h2>
+<div class="card ins mb-12" id="map-card">
+  <h2>Map <span class="dim" id="map-note"></span></h2>
   <div id="map"></div>
 </div>
 
 <div class="card">
   <div class="bar-top">
     <div>
-      <h2 style="margin:0;display:inline-block">Places <span class="dim" style="font-weight:400" id="count"></span></h2>
-      <span class="dim" style="font-weight:400;margin-left:8px">- click a row for full details</span>
+      <h2 class="places-heading">Places <span class="dim" id="count"></span></h2>
+      <span class="dim places-subtitle">- click a row for full details</span>
     </div>
     <div class="pager" id="pager-top"></div>
   </div>

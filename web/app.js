@@ -122,7 +122,7 @@ function renderPager(id, currPage, totalPages) {
     if (p === '...') return `<span class="pager-ellipsis">&hellip;</span>`;
     const num = p + 1;
     const isAct = p === currPage;
-    return `<button class="pager-btn${isAct ? ' active' : ''}" data-page="${p}" title="Page ${num}">${num}</button>`;
+    return `<button type="button" class="pager-btn${isAct ? ' active' : ''}" data-page="${p}" title="Page ${num}">${num}</button>`;
   }).join('');
 
   container.innerHTML = `
@@ -137,17 +137,17 @@ function renderPager(id, currPage, totalPages) {
       </select>
     </div>
     <div class="pager-nav">
-      <button class="pager-btn p-first" title="First page (Home)" ${currPage === 0 ? 'disabled' : ''}>&laquo;</button>
-      <button class="pager-btn p-prev" title="Previous page (Left arrow)" ${currPage === 0 ? 'disabled' : ''}>&lsaquo;</button>
+      <button type="button" class="pager-btn p-first" title="First page (Home)" ${currPage === 0 ? 'disabled' : ''}>&laquo;</button>
+      <button type="button" class="pager-btn p-prev" title="Previous page (Left arrow)" ${currPage === 0 ? 'disabled' : ''}>&lsaquo;</button>
       <div class="pager-pills" style="display:inline-flex;gap:3px;align-items:center">${pillHtml}</div>
-      <button class="pager-btn p-next" title="Next page (Right arrow)" ${currPage >= totalPages - 1 ? 'disabled' : ''}>&rsaquo;</button>
-      <button class="pager-btn p-last" title="Last page (End)" ${currPage >= totalPages - 1 ? 'disabled' : ''}>&raquo;</button>
+      <button type="button" class="pager-btn p-next" title="Next page (Right arrow)" ${currPage >= totalPages - 1 ? 'disabled' : ''}>&rsaquo;</button>
+      <button type="button" class="pager-btn p-last" title="Last page (End)" ${currPage >= totalPages - 1 ? 'disabled' : ''}>&raquo;</button>
     </div>
     <div class="pager-jump">
       <span class="dim">Page:</span>
       <input type="number" class="p-jump-input" min="1" max="${totalPages}" value="${currPage + 1}" title="Type page number and press Enter">
     </div>
-    <button class="p-export-btn" title="Export matching places as CSV">Export CSV</button>
+    <button type="button" class="p-export-btn" title="Export matching places as CSV">Export CSV</button>
   `;
 
   const sizeSelect = container.querySelector('.p-size-select');
@@ -422,7 +422,7 @@ function renderPlaces() {
       <td>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">
           <b>${esc(r[0])}</b>
-          <button class="copy-btn" title="Copy business info" onclick="event.stopPropagation();copyLeadSummary('${esc(r[23])}')">&#128203;</button>
+          <button type="button" class="copy-btn" title="Copy business info" onclick="event.stopPropagation();copyLeadSummary('${esc(r[23])}')">&#128203;</button>
         </div>
         ${r[27] & 8 ? ' <span class="tag">added by me</span>' : r[27] & 4 ? ' <span class="tag">edited</span>' : ''}
         <div class="dim">${esc(r[4])}${r[3] && !r[4].includes(r[3]) ? ' - ' + esc(r[3]) : ''}</div>
@@ -439,7 +439,7 @@ function renderPlaces() {
         ${r[5] ? `
           <div style="display:flex;align-items:center;gap:3px">
             <a href="tel:${esc(r[5])}" onclick="event.stopPropagation()">${esc(r[5])}</a>
-            <button class="copy-btn" title="Copy phone" onclick="event.stopPropagation();copyText('${esc(r[5])}', 'Phone')">&#128203;</button>
+            <button type="button" class="copy-btn" title="Copy phone" onclick="event.stopPropagation();copyText('${esc(r[5])}', 'Phone')">&#128203;</button>
           </div>
           ${wa ? `<div style="margin-top:3px"><a class="wa-link" href="${wa}" target="_blank" rel="noopener" onclick="event.stopPropagation()">&#128172; WhatsApp</a></div>` : ''}
         ` : '<span class="dim">none</span>'}
@@ -526,7 +526,7 @@ async function openPlace(key) {
   if (!r) return;
   openKey = key;
   $('panel').classList.add('open');
-  $('panel').innerHTML = `<div class="head"><div class="name">${esc(r[0])}</div><button id="p-close" aria-label="Close">Close</button></div><p class="dim">Loading...</p>`;
+  $('panel').innerHTML = `<div class="head"><div class="name">${esc(r[0])}</div><button type="button" id="p-close" aria-label="Close">Close</button></div><p class="dim">Loading...</p>`;
   $('p-close').onclick = closePlace;
   let d = {};
   try { d = await (await fetch('/place.json?key=' + encodeURIComponent(key))).json(); } catch (err) { /* panel still shows the basics */ }
@@ -538,14 +538,14 @@ async function openPlace(key) {
   const link = (href, text) => `<a class="btn" href="${esc(href)}" target="_blank" rel="noopener">${text}</a>`;
   const kv = (k, v) => v ? `<div>${k}</div><div>${v}</div>` : '';
   $('panel').innerHTML = `
-    <div class="head"><div><div class="name">${esc(r[0])}</div><div class="dim">${esc(r[1])}</div></div><button id="p-close" aria-label="Close">Close</button></div>
+    <div class="head"><div><div class="name">${esc(r[0])}</div><div class="dim">${esc(r[1])}</div></div><button type="button" id="p-close" aria-label="Close">Close</button></div>
     ${isClosed(r) ? `<div class="closed">${esc(r[15])}</div>` : ''}
     ${d.photo ? `<img class="photo" src="${esc(d.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
     <div class="actions">
       ${r[5] ? `<a class="btn" href="tel:${esc(r[5])}">Call ${esc(r[5])}</a>` : ''}
       ${waLink(r) ? link(waLink(r), 'WhatsApp') : ''}
       ${r[16] ? link(r[16], 'Google Maps') : ''}
-      <button id="p-edit">Edit details</button>
+      <button type="button" id="p-edit">Edit details</button>
       ${/^https?:\/\//i.test(r[7]) ? link(r[7], r[8] === 's' ? 'Social link' : 'Website') : ''}
       ${d.street ? link(d.street, 'Street View') : ''}
     </div>
@@ -568,7 +568,7 @@ async function openPlace(key) {
     <h3>My lead notes</h3>
     <select id="p-status">${Object.keys(LEAD_NAMES).map(k => `<option value="${k}"${(lead.status || 'new') === k ? ' selected' : ''}>${LEAD_NAMES[k]}</option>`).join('')}</select>
     <textarea id="p-note" placeholder="Notes: who you spoke to, what they said, follow-up date">${esc(lead.note || '')}</textarea>
-    <div class="actions" style="margin-top:6px"><button id="p-save">Save</button><span id="p-saved" class="dim">${lead.updated ? 'Last saved ' + esc(lead.updated.replace('T', ' ')) : ''}</span></div>
+    <div class="actions" style="margin-top:6px"><button type="button" id="p-save">Save</button><span id="p-saved" class="dim">${lead.updated ? 'Last saved ' + esc(lead.updated.replace('T', ' ')) : ''}</span></div>
 
     <h3>Rating ${r[10] > 0 ? r[10].toFixed(1) + ' from ' + fmt(r[11]) + ' reviews' : '- no reviews yet'}${r[22] >= 0 ? `<span class="dim" style="font-weight:400"> - latest review ${r[22] === 0 ? 'this month' : r[22] + ' month' + (r[22] > 1 ? 's' : '') + ' ago'}</span>` : ''}</h3>
     ${starTotal ? `<div class="bars narrow" id="p-stars"></div>
@@ -620,14 +620,14 @@ function showEditForm(r, d) {
   $('panel').classList.add('open');
   const value = idx => r && !['(no category)', '(unknown)'].includes(r[idx]) ? r[idx] : '';
   $('panel').innerHTML = `
-    <div class="head"><div class="name">${r ? 'Edit: ' + esc(r[0]) : 'Add a business'}</div><button id="p-close" aria-label="Close">Close</button></div>
+    <div class="head"><div class="name">${r ? 'Edit: ' + esc(r[0]) : 'Add a business'}</div><button type="button" id="p-close" aria-label="Close">Close</button></div>
     <p class="dim">${r ? 'Your changes are kept separately and survive new scrapes. Google data is not overwritten.' : 'For a business that is not on Google Maps. Only the name is required.'}</p>
     <div class="form">${EDIT_FIELDS.map(([name, label, idx, list]) =>
       `<label for="e-${name}">${label}</label><input id="e-${name}" value="${esc(value(idx))}"${list ? ` list="${list}"` : ''} autocomplete="off">`).join('')}</div>
     <div class="actions">
-      <button id="e-save">${r ? 'Save changes' : 'Add business'}</button>
-      <button id="e-cancel">Cancel</button>
-      ${r && d && d.edited && d.edited.length ? '<button id="e-restore">Restore Google data</button>' : ''}
+      <button type="button" id="e-save">${r ? 'Save changes' : 'Add business'}</button>
+      <button type="button" id="e-cancel">Cancel</button>
+      ${r && d && d.edited && d.edited.length ? '<button type="button" id="e-restore">Restore Google data</button>' : ''}
     </div>
     <div id="e-status" class="dim" style="margin-top:8px"></div>`;
   $('p-close').onclick = closePlace;
@@ -869,7 +869,7 @@ function renderScrapeStatus() {
 async function openScrapePanel() {
   openKey = '';
   $('panel').classList.add('open');
-  $('panel').innerHTML = '<div class="head"><div class="name">Find businesses</div><button id="p-close">Close</button></div><p class="dim">Loading...</p>';
+  $('panel').innerHTML = '<div class="head"><div class="name">Find businesses</div><button type="button" id="p-close">Close</button></div><p class="dim">Loading...</p>';
   $('p-close').onclick = closePlace;
   let s;
   try { s = await (await fetch('/scrape.json')).json(); } catch (err) { $('panel').querySelector('p').textContent = 'Could not reach Lead Finder.'; return; }
@@ -878,30 +878,30 @@ async function openScrapePanel() {
   let bbox = saved.bbox || null, areaMap = null, rectangle = null;
 
   $('panel').innerHTML = `
-    <div class="head"><div class="name">Find businesses</div><button id="p-close" aria-label="Close">Close</button></div>
+    <div class="head"><div class="name">Find businesses</div><button type="button" id="p-close" aria-label="Close">Close</button></div>
     <p class="dim">Lead Finder searches Google Maps square by square across the area, once for every business type, and adds what it finds to your list.</p>
     <div id="s-status" class="card" style="margin-top:10px"></div>
     <div id="s-form">
       <h3>1. Where</h3>
-      <div style="display:flex;gap:8px"><input id="s-area" style="flex:1" placeholder="City or area, e.g. Jodhpur" value="${esc(saved.area || '')}"><button id="s-find">Find on map</button></div>
+      <div style="display:flex;gap:8px"><input id="s-area" style="flex:1" placeholder="City or area, e.g. Jodhpur" value="${esc(saved.area || '')}"><button type="button" id="s-find">Find on map</button></div>
       <div id="s-map"></div>
       <div class="dim" id="s-size"></div>
       <h3>2. Which businesses <span class="dim" style="font-weight:400" id="s-count"></span></h3>
       <div style="margin-bottom:8px">
         <div style="display:flex;gap:6px;margin-bottom:8px">
           <input id="s-kw-input" placeholder="Add custom type (e.g. gym, salon, clinic)" style="flex:1">
-          <button id="s-kw-add">+ Add type</button>
+          <button type="button" id="s-kw-add">+ Add type</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:6px">
           <span class="dim" style="font-size:11px">Packs:</span>
-          <button class="btn-pack" data-pack="high_value" title="Gyms, salons, dental, clinics, coaching, restaurants">+ High Value</button>
-          <button class="btn-pack" data-pack="healthcare" title="Dental, doctors, hospitals, pathology, labs">+ Healthcare</button>
-          <button class="btn-pack" data-pack="education" title="Coaching, institutes, tuition, schools">+ Education</button>
-          <button class="btn-pack" data-pack="food_hospitality" title="Restaurants, cafes, hotels, banquet">+ Dining</button>
-          <button class="btn-pack" data-pack="real_estate_home" title="Real estate, builders, interior, home services">+ Real Estate</button>
-          <button class="btn-pack" data-pack="retail_showrooms" title="Jewellery, clothing, mobile, electronics">+ Retail</button>
-          <button class="btn-pack" id="s-recommended" title="Load all 200+ curated keywords">All 200+</button>
-          <button class="btn-pack" id="s-clear-kw" style="color:var(--crit)">Clear</button>
+          <button type="button" class="btn-pack" data-pack="high_value" title="Gyms, salons, dental, clinics, coaching, restaurants">+ High Value</button>
+          <button type="button" class="btn-pack" data-pack="healthcare" title="Dental, doctors, hospitals, pathology, labs">+ Healthcare</button>
+          <button type="button" class="btn-pack" data-pack="education" title="Coaching, institutes, tuition, schools">+ Education</button>
+          <button type="button" class="btn-pack" data-pack="food_hospitality" title="Restaurants, cafes, hotels, banquet">+ Dining</button>
+          <button type="button" class="btn-pack" data-pack="real_estate_home" title="Real estate, builders, interior, home services">+ Real Estate</button>
+          <button type="button" class="btn-pack" data-pack="retail_showrooms" title="Jewellery, clothing, mobile, electronics">+ Retail</button>
+          <button type="button" class="btn-pack" id="s-recommended" title="Load all 200+ curated keywords">All 200+</button>
+          <button type="button" class="btn-pack" id="s-clear-kw" style="color:var(--crit)">Clear</button>
         </div>
       </div>
       <div class="form" style="grid-template-columns:1fr">
@@ -916,7 +916,7 @@ async function openScrapePanel() {
       </div>
       <div class="dim" id="s-estimate" style="margin-top:8px"></div>
     </div>
-    <div class="actions"><button id="s-start" class="primary">Start search</button></div>
+    <div class="actions"><button type="button" id="s-start" class="primary">Start search</button></div>
     <div id="s-error" class="closed" style="margin-top:8px"></div>
     <p class="dim" style="margin-top:14px">Keep the Lead Finder window open while it searches. You can close this panel and keep working; new leads appear on their own.
       Stopping is safe: next time it continues where it left off.</p>`;
@@ -1054,3 +1054,4 @@ fetch('/leads.json').then(res => res.json()).then(leads => { LEADS = leads; }).c
   load();
   setInterval(load, REFRESH_MS);
 });
+
